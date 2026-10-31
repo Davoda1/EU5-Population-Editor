@@ -72,13 +72,18 @@ try {
   expect(prefs.sandbox).toBe(true);
   expect(await page.evaluate(() => typeof window.require)).toBe("undefined");
   expect(await page.evaluate(() => Object.keys(window.eu5).sort())).toEqual([
+    "browseGameDirectory",
     "gameVersion",
+    "installationVersion",
     "onEvent",
     "openLink",
     "preferences",
+    "previewTheme",
     "request",
     "respondConfirmation",
     "restart",
+    "settings",
+    "startup",
   ]);
   const edit = async (value) => {
     await page
@@ -166,10 +171,19 @@ try {
   await expect(page.getByLabel("Supported EU5 version")).toHaveValue("1.4.5");
   const ack = page.getByRole("checkbox", { name: /this game version has not been verified/ });
   await expect(ack).toHaveCount(0);
-  await page.getByLabel("Supported EU5 version").fill("1.4.6");
+  await expect(page.getByLabel("Supported EU5 version")).toHaveAttribute("readonly", "");
+  await page.getByRole("button", { name: "Game settings", exact: true }).click();
+  await page.getByLabel("Manual EU5 version").fill("1.4.6");
+  await page.getByRole("button", { name: "Save settings", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Settings", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Export Mod", exact: true }).click();
   await expect(ack).toBeVisible();
   await expect(page.getByRole("button", { name: "Choose output and export" })).toBeDisabled();
-  await page.getByLabel("Supported EU5 version").fill("v1.4.5");
+  await page.getByRole("button", { name: "Game settings", exact: true }).click();
+  await page.getByLabel("Manual EU5 version").fill("v1.4.5");
+  await page.getByRole("button", { name: "Save settings", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Settings", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Export Mod", exact: true }).click();
   await expect(ack).toHaveCount(0);
   await dialog(output);
   await page.getByRole("button", { name: "Choose output and export" }).click();

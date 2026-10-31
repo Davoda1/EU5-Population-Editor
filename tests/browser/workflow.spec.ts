@@ -89,12 +89,18 @@ test.beforeEach(async ({ page }) => {
       region: (window as any).__mapFixtureEnabled ? { min_x: 900, max_x: 999, min_y: 450, max_y: 499, area: 5000, sum_x: 0, sum_y: 0 } : null,
       map_dimensions: (window as any).__mapFixtureEnabled ? [2000, 1200] : null,
     });
+    let settings = { theme: "dark", gameDir: "", gameVersion: "1.4.5", autoLoad: true, rememberWindow: true, rememberFolders: true, geometry: null };
     (window as any).eu5 = {
+      settings: async (value?: any) => { if (value) settings = { ...settings, ...value }; return { ...settings }; },
+      installationVersion: async () => ({ version: "1.4.5", source: "manual" }),
+      browseGameDirectory: async () => "/games/Europa Universalis V",
+      startup: async () => null,
       respondConfirmation: async (token: string, action: string) => {
         (window as any).__confirmationResponse = { token, action };
         (window as any).__eventListener({ event: "confirmation-closed", data: { token } });
       },
       openLink: async () => {},
+      previewTheme: async () => {},
       preferences: async () => ({ theme: "dark" }),
       gameVersion: async (value?: string) => ({ version: value?.replace(/^v/i, "") || "1.4.5", source: "manual" }),
       onEvent: (listener: any) => { (window as any).__eventListener = listener; return () => {}; },
@@ -102,6 +108,8 @@ test.beforeEach(async ({ page }) => {
       request: async (method: string, params: any = {}) => {
         switch (method) {
           case "load_game":
+          case "load_saved_game":
+            settings.gameDir = "/games/Europa Universalis V";
             return status();
           case "status":
             return status();
@@ -249,7 +257,9 @@ test("confirmations follow the active theme and Escape cancels without discardin
       token: "browser-confirmation", reason, hasDrafts: true, canSave: true, unavailable: false, error,
     } });
   }, { reason, error });
-  await page.getByLabel("Theme").selectOption("dark");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("radio", { name: "Dark theme", exact: true }).locator("..").click();
+  await page.getByRole("button", { name: "Save settings", exact: true }).click();
   await emit("exit");
   let dialog = page.getByRole("dialog", { name: "Unsaved work — exit editor?" });
   await expect(dialog.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
@@ -257,7 +267,9 @@ test("confirmations follow the active theme and Escape cancels without discardin
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__confirmationResponse)).toEqual({ token: "browser-confirmation", action: "cancel" });
-  await page.getByLabel("Theme").selectOption("light");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("radio", { name: "Light theme", exact: true }).locator("..").click();
+  await page.getByRole("button", { name: "Save settings", exact: true }).click();
   await emit("replace", "Save was canceled. Your current work is still open.");
   dialog = page.getByRole("dialog", { name: "Replace current work?" });
   await expect(dialog.getByRole("alert")).toContainText("still open");
@@ -327,4 +339,53 @@ test("blocked map regions retain selection while panning and zooming still work"
   await map.click({ position: { x: 100, y: 100 } });
   await expect(page.getByRole("heading", { name: "Beta City", exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as any).__mapSelections.at(-1))).toBe("beta");
+});
+
+
+test("welcome fits without scrolling at supported sizes and after saving an installation", async ({ page }) => {
+  for (const configured of [false, true]) {
+    if (configured) {
+      await page.locator(".gear-button").click();
+      await page.getByRole("tab", { name: "Game", exact: true }).click();
+      await page.getByLabel("Installation directory").fill("/games/Europa Universalis V");
+      await page.getByRole("button", { name: "Save settings", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Load saved game data" })).toBeVisible();
+    }
+    for (const [width, height] of [[960, 640], [960, 680], [1024, 768], [1440, 900], [1920, 1080]]) {
+      await page.setViewportSize({ width, height });
+      await expect.poll(async () => page.locator(".welcome").evaluate(content => {
+        const viewport = content.parentElement!;
+        const inner = content.getBoundingClientRect(), outer = viewport.getBoundingClientRect();
+        return inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1 && inner.left >= outer.left - 1 && inner.right <= outer.right + 1;
+      })).toBe(true);
+      expect(await page.locator(".welcome-viewport").evaluate(node => ["hidden", "clip"].includes(getComputedStyle(node).overflowY))).toBe(true);
+      const before = await page.evaluate(() => [window.scrollX, window.scrollY]);
+      await page.locator(".welcome").hover();
+      await page.mouse.wheel(0, 800);
+      expect(await page.evaluate(() => [window.scrollX, window.scrollY])).toEqual(before);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+      await expect(page.getByText("Your installation stays read-only.", { exact: false })).toBeVisible();
+    }
+  }
+});
+
+test("settings keyboard navigation, theme cancellation and persistent footer stay usable at minimum size", async ({ page }) => {
+  await page.setViewportSize({ width: 960, height: 640 });
+  await page.locator(".gear-button").click();
+  const settings = page.getByRole("dialog", { name: "Settings", exact: true });
+  await page.getByRole("radio", { name: "Light theme" }).locator("..").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  const appearance = page.getByRole("tab", { name: "Appearance", exact: true });
+  await appearance.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("tab", { name: "Game", exact: true })).toBeFocused();
+  await expect(page.getByLabel("Installation directory")).toBeVisible();
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab", { name: "Window", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Save settings" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeInViewport();
+  await page.keyboard.press("Escape");
+  await expect(settings).toHaveCount(0);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".gear-button")).toBeFocused();
 });

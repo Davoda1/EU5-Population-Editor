@@ -1,4 +1,4 @@
-# Building 1.0.0
+# Building 1.0.1
 
 `package-lock.json` and `core/Cargo.lock` pin the JavaScript and Rust dependencies.
 Release builds use both lockfiles. See `TESTING-REPORT.md` for the exact toolchain,
@@ -47,7 +47,7 @@ tests, production compilation, desktop tests when a display is available,
 packaging, packaged-sidecar protocol checks, Debian layout checks, source
 packaging and one SHA-256 manifest. A failed gate stops the pipeline.
 
-Pushing a semantic version tag such as `v1.0.0` starts the **Release** workflow.
+Pushing a semantic version tag such as `v1.0.1` starts the **Release** workflow.
 It checks the tag against `master` and the application version, runs the complete
 Windows and Linux build and test pipeline, and creates a draft release containing
 the verified packages and checksum manifest. Review the draft and its assets

@@ -6,7 +6,7 @@ Explore and edit Europa Universalis V population data with an offline desktop ed
 
 [![CI](https://github.com/Davoda1/EU5-Population-Editor/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Davoda1/EU5-Population-Editor/actions/workflows/ci.yml)
 
-**[Downloads](https://github.com/Davoda1/EU5-Population-Editor/releases)** · **[User manual](https://davoda1.github.io/EU5-Population-Editor-Manual/)** · **[Report an issue](https://github.com/Davoda1/EU5-Population-Editor/issues)**
+**[Download 1.0.1](https://github.com/Davoda1/EU5-Population-Editor/releases/tag/v1.0.1)** · **[User manual](https://davoda1.github.io/EU5-Population-Editor-Manual/)** · **[Report an issue](https://github.com/Davoda1/EU5-Population-Editor/issues)**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/extras/workspace-dark.png">
@@ -31,12 +31,14 @@ Explore and edit Europa Universalis V population data with an offline desktop ed
 ## Get started
 
 1. Extract the release archive and run the executable. Keep all extracted files together. Linux users can also install the Debian package.
-2. Select your EU5 installation directory or its `game` subdirectory. The editor requires your own game data.
+2. Select your EU5 installation directory or its `game` subdirectory. In **Settings → Game**, you can also type or paste the path and save its manual game version. Saved game data loads automatically at startup unless disabled. The editor requires your own game data.
 3. Choose a country and location, make an edit, and review the Draft.
 4. Choose **Apply**, then save your project. Save regularly; there is no autosave. Pending Drafts are excluded from saves and exports.
 5. Choose **Validate**, then **Export Mod** to create a separate mod outside the game installation.
 
-Compatibility with **Europa Universalis V v1.4.5** is confirmed. Application **1.0.0** uses **v1.4.5** as its initial supported-game-version setting, which you can change and save for each installation. This confirmation does not extend automatically to later game versions. After updating the game, use **Upgrade Project / Mod** to review changes to the source data; changing the version label does not perform that migration.
+Compatibility with **Europa Universalis V v1.4.5** is confirmed. Application **1.0.1** uses **v1.4.5** as its initial supported-game-version setting, which you can change and save for each installation. This confirmation does not extend automatically to later game versions. After updating the game, use **Upgrade Project / Mod** to review changes to the source data; changing the version label does not perform that migration.
+
+Open the gear beside **About** for **Appearance**, **Game**, and **Window** settings. Preview System, Light or Dark appearance, then save or cancel. The editor can remember window size, position and maximized state, as well as separate project and export folders. **Reset window layout** returns to the default size and centered position. The welcome screen fits the window without scrolling.
 
 Settings and map caches are stored in `%AppData%\eu5-population-editor` on Windows and `~/.config/eu5-population-editor` on Linux, respecting `XDG_CONFIG_HOME` when set. Projects are saved wherever you choose. The editor works offline, with no telemetry or runtime downloads.
 

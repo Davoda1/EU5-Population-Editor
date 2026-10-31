@@ -32,7 +32,7 @@ it("preload exposes only allowed methods and no raw IPC or file access", () => {
     /node:fs|node:child_process|sendSync|exposeInMainWorld\([^\n]*ipcRenderer/,
   );
 });
-it("privileged paths come from main-process dialogs", () => {
+it("core paths come from dialogs or validated saved installation settings", () => {
   expect(main).toContain("deleteparams.path;deleteparams.cache");
   expect(main).toContain("event.senderFrame!==window.webContents.mainFrame");
 });

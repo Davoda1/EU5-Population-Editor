@@ -1,4 +1,5 @@
 import appIcon from "../../assets/icon.svg";
+import settingsGear from "../../assets/settings-gear.svg";
 import { version } from "../../package.json";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type {
@@ -10,8 +11,11 @@ import type {
   Method,
   Params,
   ConfirmationPrompt,
+  AppSettings,
 } from "../types/api";
 import { Dialog } from "../components/Dialog";
+import { SettingsDialog } from "../components/SettingsDialog";
+import { Welcome } from "../components/Welcome";
 import { ConfirmationDialog } from "../components/ConfirmationDialog";
 import { Demographics } from "../features/Demographics";
 import {
@@ -34,7 +38,9 @@ export function App() {
     [list, setList] = useState<LocationList>({ total: 0, items: [] }),
     [forms, setForms] = useState<Record<string, DraftForm>>({}),
     [theme, setTheme] = useState<"auto" | "light" | "dark">("auto"),
-    [busy, setBusy] = useState(""),
+    [settings, setSettings] = useState<AppSettings | null>(null),
+    [settingsTab, setSettingsTab] = useState<"appearance" | "game" | "window">("appearance"),
+    [busy, setBusy] = useState("Starting editor"),
     [notice, setNotice] = useState(""),
     [error, setError] = useState(""),
     [progress, setProgress] = useState<number | null>(null),
@@ -61,6 +67,7 @@ export function App() {
       acknowledge_unverified_version: false,
     });
   const verifiedGameVersion = /^v?1\.4\.5$/i.test(exportOpts.supported_game_version.trim());
+  const startupStarted = useRef(false);
   const locationTicket = useRef(0),
     listTicket = useRef(0);
   const call = useCallback(
@@ -84,17 +91,6 @@ export function App() {
       supported_game_version: preference.version,
       acknowledge_unverified_version: false,
     }));
-  };
-  const saveGameVersion = async () => {
-    const preference = await window.eu5.gameVersion(
-      exportOpts.supported_game_version,
-    );
-    setSavedGameVersion(preference.version);
-    setExportOpts((options) => ({
-      ...options,
-      supported_game_version: preference.version,
-    }));
-    return preference.version;
   };
   const run = async (label: string, fn: () => Promise<void>) => {
     if (busy) return;
@@ -130,11 +126,7 @@ export function App() {
     if (s.selected_location) void select(s.selected_location);
   };
   useEffect(() => {
-    void window.eu5
-      .preferences()
-      .then((p) => setTheme(p.theme))
-      .catch(failed);
-    return window.eu5.onEvent((event) => {
+    const unsubscribe = window.eu5.onEvent((event) => {
       if (event.event === "confirmation") setConfirmation(event.data as unknown as ConfirmationPrompt);
       if (event.event === "confirmation-closed") setConfirmation((current) => current?.token === event.data.token ? null : current);
       if (event.event === "project-saved") setStatus(event.data.status as unknown as Status);
@@ -145,6 +137,30 @@ export function App() {
         setBusy("");
       }
     });
+    if (!startupStarted.current) {
+      startupStarted.current = true;
+      void (async () => {
+        try {
+          const p = await window.eu5.settings();
+          setSettings(p);
+          setTheme(p.theme);
+          if (p.autoLoad && p.gameDir) setBusy("Loading saved game data");
+          const s = await window.eu5.startup();
+          if (s) {
+            resetView(s);
+            await syncGameVersion();
+            setValidation(await call("validate"));
+            setNotice("Saved game data loaded. Select a country and location.");
+          }
+        } catch (e) {
+          failed(e);
+        } finally {
+          setBusy("");
+          setProgress(null);
+        }
+      })();
+    }
+    return unsubscribe;
   }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -182,6 +198,7 @@ export function App() {
   }, [forms]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (modal || confirmation || plan || legacy) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         if (status)
@@ -203,12 +220,13 @@ export function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   });
-  const load = () =>
+  const load = (saved = false) =>
     run("Loading game data", async () => {
-      const s = await call<Status | null>("load_game");
+      const s = await call<Status | null>(saved ? "load_saved_game" : "load_game");
       if (s) {
         resetView(s);
         await syncGameVersion();
+        setSettings(await window.eu5.settings());
         setValidation(await call("validate"));
         setNotice("Game data loaded. Select a country and location.");
       }
@@ -374,22 +392,10 @@ export function App() {
         >
           Redo
         </button>
-        <label className="theme-select">
-          <span className="sr-only">Theme</span>
-          <select
-            value={theme}
-            onChange={(e) => {
-              const t = e.target.value as typeof theme;
-              setTheme(t);
-              void window.eu5.preferences(t).catch(failed);
-            }}
-          >
-            <option value="auto">Auto theme</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-        <button onClick={() => setModal("help")}>About</button>
+        <div className="toolbar-end">
+          <button onClick={() => setModal("help")}>About</button>
+          <button className="gear-button" title="Settings" aria-label="Settings" disabled={!!busy || !settings} onClick={() => { setSettingsTab("appearance"); setModal("settings"); }}><img src={settingsGear} alt="" width="21" height="21" /></button>
+        </div>
       </nav>
       {error && (
         <div className="error banner" role="alert">
@@ -419,50 +425,7 @@ export function App() {
         </div>
       )}
       {!status ? (
-        <main className="welcome">
-          <div className="eyebrow">
-            OFFLINE · SOURCE-PRESERVING · EXACT VALUES
-          </div>
-          <h2>
-            Shape a location.
-            <br />
-            Keep its history.
-          </h2>
-          <p>
-            Compare vanilla populations with your confirmed changes. Review
-            every edit before applying it, save projects independently, and
-            migrate conservatively when the game changes.
-          </p>
-          <button
-            className="primary large"
-            disabled={!!busy}
-            onClick={() => void load()}
-          >
-            Select EU5 game data
-          </button>
-          <p className="hint">
-            Choose the installation root or its game folder. Steam locations are
-            used as Browse starting points when detected.
-          </p>
-          <div className="welcome-cards">
-            <section>
-              <strong>01 / Inspect</strong>
-              <p>Country → location → demographic tuple.</p>
-            </section>
-            <section>
-              <strong>02 / Review</strong>
-              <p>Original, Working and Draft side by side.</p>
-            </section>
-            <section>
-              <strong>03 / Preserve</strong>
-              <p>Save confirmed edits. Export when ready.</p>
-            </section>
-          </div>
-          <p className="compatibility">
-            Your installation stays read-only. Projects save confirmed changes;
-            exports create a separate mod folder.
-          </p>
-        </main>
+        <Welcome settings={settings} busy={!!busy} onLoad={() => void load(!!settings?.gameDir)} onSettings={() => { setSettingsTab("game"); setModal("settings"); }} />
       ) : (
         <main className="workspace">
           <aside className="navigation">
@@ -766,6 +729,13 @@ export function App() {
             : ""}
         </span>
       </footer>
+      {modal === "settings" && settings && <SettingsDialog settings={settings} initialTab={settingsTab} onPreviewTheme={value => { setTheme(value); void window.eu5.previewTheme(value).catch(failed); }} onClose={() => setModal("")} onSaved={async updated => {
+        setSettings(updated);
+        setTheme(updated.theme);
+        if (status) await syncGameVersion();
+        setNotice("Settings saved on this device.");
+        setModal("");
+      }} onLoad={() => { setModal(""); void load(true); }} />}
       {modal === "upgrade" && (
         <Dialog title="Upgrade Project / Mod" onClose={() => setModal("")}>
           <p>
@@ -868,7 +838,7 @@ export function App() {
             {status?.modified || 0} modified locations. All pending Draft values
             are excluded.
           </p>
-          {(["name", "id", "version", "supported_game_version"] as const).map(
+          {(["name", "id", "version"] as const).map(
             (k) => (
               <label key={k}>
                 {
@@ -884,35 +854,15 @@ export function App() {
                   onChange={(e) =>
                     setExportOpts({
                       ...exportOpts, [k]: e.target.value,
-                      ...(k === "supported_game_version" ? { acknowledge_unverified_version: false } : {}),
                     })
                   }
                 />
               </label>
             ),
           )}
-          <p>
-            EU5 version is set manually and saved for this installation.
-            {savedGameVersion ? ` Saved version: ${savedGameVersion}.` : ""}
-          </p>
-          <button
-            disabled={
-              !!busy ||
-              !status ||
-              !exportOpts.supported_game_version.trim() ||
-              exportOpts.supported_game_version === savedGameVersion
-            }
-            onClick={() =>
-              void run("Saving game version", async () => {
-                const version = await saveGameVersion();
-                setNotice(
-                  `Manual EU5 version ${version} saved for this installation.`,
-                );
-              })
-            }
-          >
-            Save game version
-          </button>
+          <label>Supported EU5 version<input value={savedGameVersion} readOnly /></label>
+          <p>Uses the saved manual version of the loaded installation.</p>
+          <button disabled={!!busy} onClick={() => { setSettingsTab("game"); setModal("settings"); }}>Game settings</button>
           <label className="check">
             <input
               type="checkbox"
@@ -977,7 +927,7 @@ export function App() {
               }
               onClick={() =>
                 void run("Exporting mod", async () => {
-                  const supported_game_version = await saveGameVersion();
+                  const supported_game_version = (await window.eu5.gameVersion()).version;
                   const r = await call<{ path: string } | null>("export", {
                     options: { ...exportOpts, supported_game_version },
                   });
@@ -1004,6 +954,7 @@ export function App() {
             void run("Loading migrated project", async () => {
               resetView(await refresh());
               await syncGameVersion();
+              setSettings(await window.eu5.settings());
               setValidation(await call("validate"));
             });
           }}

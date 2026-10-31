@@ -1,6 +1,6 @@
 {
   "name": "eu5-population-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "license": "AGPL-3.0-only",
   "description": "Unofficial offline Europa Universalis V population and demographics editor",
@@ -13,7 +13,7 @@
     "package:linux": "electron-builder --linux --x64 --publish never",
     "package:windows": "electron-builder --win zip --x64 --publish never",
     "test:browser": "playwright test",
-    "test:desktop": "node tests/desktop/workflow.mjs && node tests/desktop/confirmations.mjs"
+    "test:desktop": "node tests/desktop/workflow.mjs && node tests/desktop/confirmations.mjs && node tests/desktop/settings.mjs"
   },
   "dependencies": {
     "react": "19.1.1",

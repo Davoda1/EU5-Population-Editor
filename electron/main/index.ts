@@ -7,6 +7,7 @@ import {
   session,
   Menu,
   shell,
+  screen,
 } from "electron";
 import { mkdirSync } from "node:fs";
 import { ConfirmationController } from "./confirmation";
@@ -19,8 +20,11 @@ import { candidates } from "./discovery";
 import {
   GameVersionSettings,
   normalizeGameVersion,
+  installationPath,
+  DEFAULT_GAME_VERSION,
 } from "./game-version-settings";
-import { methods, Method, Status, ConfirmationPrompt } from "../../src/types/api";
+import { methods, Method, Status, ConfirmationPrompt, AppSettings, AppSettingsUpdate } from "../../src/types/api";
+import { defaultPreferences, readPreferences, windowBounds, MIN_WINDOW_SIZE, Preferences } from "./app-settings";
 app.setName("eu5-population-editor");
 if (process.platform === "linux") app.commandLine.appendSwitch("class", "eu5-population-editor");
 // A stable directory independent of the display name. Respect explicit profile
@@ -37,26 +41,32 @@ let rendererDrafts = false;
 let pendingGameDir = "";
 let hasProject = false;
 let operationActive = false;
-interface Preferences {
-  theme: "auto" | "light" | "dark";
-  width: number;
-  height: number;
-  gameDir: string;
-  projectDir: string;
-}
-let prefs: Preferences = {
-  theme: "auto",
-  width: 1440,
-  height: 920,
-  gameDir: "",
-  projectDir: "",
-};
+let prefs: Preferences = defaultPreferences();
 const prefPath = () => join(app.getPath("userData"), "preferences.json");
-async function savePrefs() {
-  const path = prefPath();
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path + ".tmp", JSON.stringify(prefs));
-  await rename(path + ".tmp", path);
+let preferenceWrites = Promise.resolve();
+async function savePrefs(value: Preferences = prefs) {
+  const serialized = JSON.stringify(value);
+  const operation = preferenceWrites.catch(() => {}).then(async () => {
+    const path = prefPath();
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path + ".tmp", serialized, "utf8");
+    await rename(path + ".tmp", path);
+  });
+  preferenceWrites = operation;
+  await operation;
+}
+function captureWindow() {
+  if (!prefs.rememberWindow) { prefs.geometry = null; return; }
+  prefs.geometry = { ...window.getNormalBounds(), maximized: window.isMaximized() };
+}
+function defaultDirectory(kind: "projectDir" | "exportDir") {
+  return (prefs.rememberFolders && prefs[kind]) || app.getPath("documents");
+}
+async function rememberDirectory(kind: "projectDir" | "exportDir", path: string) {
+  if (!prefs.rememberFolders) return;
+  prefs[kind] = path;
+  try { await savePrefs(); }
+  catch { emit("operation-error", { message: "The operation completed, but its last-used folder could not be saved." }); }
 }
 function sender(event: Electron.IpcMainInvokeEvent) {
   if (
@@ -73,7 +83,7 @@ async function saveProject(saveAs = false): Promise<Status | null> {
   let path = projectPath;
   if (saveAs || !path) {
     const result = await dialog.showSaveDialog(window, {
-      defaultPath: join(prefs.projectDir || app.getPath("documents"), "Population.eu5popproj"),
+      defaultPath: join(defaultDirectory("projectDir"), "Population.eu5popproj"),
       filters: [{ name: "Population project", extensions: ["eu5popproj"] }],
     });
     if (result.canceled || !result.filePath) return null;
@@ -81,8 +91,7 @@ async function saveProject(saveAs = false): Promise<Status | null> {
   }
   const result = await core.request<Status>("save", { path });
   projectPath = path;
-  prefs.projectDir = dirname(path);
-  await savePrefs();
+  await rememberDirectory("projectDir", dirname(path));
   emit("project-saved", { status: result });
   return result;
 }
@@ -114,18 +123,8 @@ app.whenReady().then(async () => {
     join(app.getPath("userData"), "game-versions.json"),
   );
   try {
-    const p = JSON.parse(await readFile(prefPath(), "utf8"));
-    prefs = {
-      ...prefs,
-      theme: ["auto", "light", "dark"].includes(p.theme) ? p.theme : "auto",
-      width: Math.max(960, Math.min(3840, Number(p.width) || 1440)),
-      height: Math.max(680, Math.min(2160, Number(p.height) || 920)),
-      gameDir: typeof p.gameDir === "string" ? p.gameDir : "",
-      projectDir: typeof p.projectDir === "string" ? p.projectDir : "",
-    };
-  } catch {
-    /* first run or corrupt preferences */
-  }
+    prefs = readPreferences(JSON.parse(await readFile(prefPath(), "utf8")));
+  } catch { /* first run or corrupt preferences */ }
   nativeTheme.themeSource = prefs.theme === "auto" ? "system" : prefs.theme;
   const executable = app.isPackaged
     ? join(
@@ -145,11 +144,11 @@ app.whenReady().then(async () => {
       );
   core = new CoreClient(executable);
   if (process.platform === "win32") app.setAppUserModelId("io.github.davoda1.eu5-population-editor");
+  const initialBounds = windowBounds(prefs.geometry, screen.getAllDisplays().map((display) => display.workArea), screen.getPrimaryDisplay().workArea);
   window = new BrowserWindow({
-    width: prefs.width,
-    height: prefs.height,
-    minWidth: 960,
-    minHeight: 680,
+    ...initialBounds,
+    minWidth: Math.min(MIN_WINDOW_SIZE.width, initialBounds.width),
+    minHeight: Math.min(MIN_WINDOW_SIZE.height, initialBounds.height),
     title: "EU5 Population & Demographics Editor",
     icon: join(app.isPackaged ? process.resourcesPath : app.getAppPath(), "assets", ...(process.platform === "win32" ? ["icon.ico"] : ["icons", "512.png"])),
     backgroundColor: "#151c24",
@@ -163,6 +162,7 @@ app.whenReady().then(async () => {
     },
   });
   Menu.setApplicationMenu(null);
+  if (prefs.rememberWindow && prefs.geometry?.maximized) window.maximize();
   window.webContents.on("render-process-gone", () => confirmations.abort());
   window.webContents.on("destroyed", () => confirmations.abort());
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -178,6 +178,115 @@ app.whenReady().then(async () => {
   );
   core.on("event", (event) => {
     if (!window.isDestroyed()) window.webContents.send("eu5:event", event);
+  });
+  async function settingsSnapshot(): Promise<AppSettings> {
+    let gameVersion = DEFAULT_GAME_VERSION;
+    if (prefs.gameDir) {
+      try { gameVersion = (await gameVersions.forPath(prefs.gameDir)).version; }
+      catch { /* Missing saved installations remain editable in Settings. */ }
+    }
+    return {
+      theme: prefs.theme, gameDir: prefs.gameDir, gameVersion,
+      autoLoad: prefs.autoLoad, rememberWindow: prefs.rememberWindow,
+      rememberFolders: prefs.rememberFolders, geometry: prefs.geometry,
+    };
+  }
+  async function loadInstallation(path: string): Promise<Status> {
+    const prepared = await gameVersions.prepare(path);
+    const result = await core.request<Status>("load_game", { path });
+    gameVersions.usePrepared(prepared);
+    hasProject = true;
+    projectPath = "";
+    rendererDrafts = false;
+    pendingGameDir = "";
+    prefs.gameDir = path;
+    try { await savePrefs(); }
+    catch { emit("operation-error", { message: "Game data loaded, but the installation preference could not be saved." }); }
+    return result;
+  }
+  let startupAttempt: Promise<Status | null> | undefined;
+  ipcMain.handle("eu5:startup", (event) => {
+    sender(event);
+    if (!startupAttempt) startupAttempt = (async () => {
+      if (!prefs.autoLoad || !prefs.gameDir || hasProject || operationActive) return null;
+      operationActive = true;
+      try { return await loadInstallation(prefs.gameDir); }
+      finally { operationActive = false; }
+    })();
+    return startupAttempt;
+  });
+  ipcMain.handle("eu5:browse-game-directory", async (event) => {
+    sender(event);
+    if (operationActive) throw new Error("Finish the current operation or confirmation first");
+    operationActive = true;
+    try { return await browseDir(prefs.gameDir || (await candidates())[0]); }
+    finally { operationActive = false; }
+  });
+  ipcMain.handle("eu5:installation-version", async (event, path) => {
+    sender(event);
+    if (typeof path !== "string") throw new Error("Enter an installation directory.");
+    return gameVersions.forPath(path);
+  });
+  ipcMain.handle("eu5:preview-theme", (event, theme) => {
+    sender(event);
+    if (!["auto", "light", "dark"].includes(theme)) throw new Error("Invalid theme");
+    nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+  });
+  ipcMain.handle("eu5:settings", async (event, value?: AppSettingsUpdate) => {
+    sender(event);
+    if (value === undefined) return settingsSnapshot();
+    if (operationActive) throw new Error("Finish the current operation or confirmation first");
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        !["auto", "light", "dark"].includes(value.theme) ||
+        ["autoLoad", "rememberWindow", "rememberFolders"].some((key) => typeof value[key as keyof AppSettingsUpdate] !== "boolean") ||
+        (value.resetWindow !== undefined && typeof value.resetWindow !== "boolean") || typeof value.gameDir !== "string")
+      throw new Error("Invalid application settings.");
+    const path = value.gameDir.trim() ? installationPath(value.gameDir) : "";
+    const version = normalizeGameVersion(value.gameVersion);
+    operationActive = true;
+    try {
+      // Validate a changed installation in isolation, preserving the active session.
+      if (path && path !== prefs.gameDir) {
+        const probe = new CoreClient(executable);
+        try { await probe.request("load_game", { path }); }
+        finally { probe.stop(); }
+      }
+      const next: Preferences = {
+        ...prefs, theme: value.theme, gameDir: path, autoLoad: value.autoLoad,
+        rememberWindow: value.rememberWindow, rememberFolders: value.rememberFolders,
+        geometry: !value.rememberWindow || value.resetWindow ? null : prefs.geometry,
+        projectDir: value.rememberFolders ? prefs.projectDir : "",
+        exportDir: value.rememberFolders ? prefs.exportDir : "",
+      };
+      const versionChanged = path && version !== (await gameVersions.forPath(path)).version;
+      if (path && (path !== prefs.gameDir || versionChanged))
+        await gameVersions.saveWithPreferences(path, version, () => savePrefs(next), () => savePrefs(prefs));
+      else await savePrefs(next);
+      prefs = next;
+      nativeTheme.themeSource = prefs.theme === "auto" ? "system" : prefs.theme;
+      if (value.resetWindow) {
+        const area = screen.getDisplayMatching(window.getBounds()).workArea;
+        if (window.isMaximized()) {
+          const restored = await new Promise<boolean>((resolve) => {
+            const finished = () => { clearTimeout(timer); window.removeListener("unmaximize", finished); resolve(true); };
+            const timer = setTimeout(() => {
+              window.removeListener("unmaximize", finished);
+              resolve(!window.isMaximized());
+            }, 3000);
+            window.once("unmaximize", finished);
+            window.unmaximize();
+          });
+          if (!restored) {
+            emit("operation-error", { message: "Settings were saved. The window could not be reset now; its default layout will be used at the next startup." });
+            return settingsSnapshot();
+          }
+        }
+        const bounds = windowBounds(null, [area], area);
+        window.setMinimumSize(Math.min(MIN_WINDOW_SIZE.width, area.width), Math.min(MIN_WINDOW_SIZE.height, area.height));
+        window.setBounds(bounds);
+      }
+      return settingsSnapshot();
+    } finally { operationActive = false; }
   });
   ipcMain.handle(
     "eu5:request",
@@ -198,18 +307,23 @@ app.whenReady().then(async () => {
         delete params.path;
         delete params.cache;
         if (
-          ["load_game", "new_project", "open", "legacy_commit"].includes(
+          ["load_game", "load_saved_game", "new_project", "open", "legacy_commit"].includes(
             method,
           ) &&
           !(await confirmReplace())
         )
           return null;
+        if (method === "load_saved_game") {
+          if (!prefs.gameDir) throw new Error("Save an installation directory in Settings first.");
+          return await loadInstallation(prefs.gameDir);
+        }
         if (method === "load_game" || method === "upgrade_plan") {
           const start =
             prefs.gameDir || (await candidates())[0] || app.getPath("documents");
           const path = await browseDir(start);
           if (!path) return null;
           params.path = path;
+          if (method === "load_game") return await loadInstallation(path);
         }
         if (
           method === "open" ||
@@ -217,7 +331,7 @@ app.whenReady().then(async () => {
           method === "import_mod_plan"
         ) {
           const r = await dialog.showOpenDialog(window, {
-            defaultPath: prefs.projectDir || app.getPath("documents"),
+            defaultPath: defaultDirectory("projectDir"),
             properties: ["openFile"],
             filters: [
               {
@@ -244,7 +358,7 @@ app.whenReady().then(async () => {
             ...options,
             supported_game_version: normalizeGameVersion(options.supported_game_version),
           };
-          const path = await browseDir(prefs.projectDir);
+          const path = await browseDir(defaultDirectory("exportDir"));
           if (!path) return null;
           params.path = path;
         }
@@ -254,7 +368,7 @@ app.whenReady().then(async () => {
             throw new Error("Invalid report format");
           const r = await dialog.showSaveDialog(window, {
             defaultPath: join(
-              prefs.projectDir || app.getPath("documents"),
+              defaultDirectory("projectDir"),
               `${method === "change_report" ? "Changes" : "Migration"}.${format}`,
             ),
           });
@@ -263,31 +377,28 @@ app.whenReady().then(async () => {
         }
         if (method === "map_index")
           params.cache = join(app.getPath("userData"), "map-cache");
+        const preparedUpgrade = method === "upgrade_commit" && pendingGameDir
+          ? await gameVersions.prepare(pendingGameDir) : null;
         const result = await core.request(method, params);
         if (method === "open") {
           projectPath = String(params.path);
-          prefs.projectDir = dirname(projectPath);
-          await savePrefs();
+          await rememberDirectory("projectDir", dirname(projectPath));
         }
         if (
           method === "new_project" ||
-          method === "load_game" ||
           method === "legacy_commit"
         )
           projectPath = "";
-        if (method === "load_game") {
-          hasProject = true;
-          prefs.gameDir = String(params.path);
-          await gameVersions.activate(prefs.gameDir);
-          pendingGameDir = "";
-          await savePrefs();
-        }
+        if (method === "export") await rememberDirectory("exportDir", String(params.path));
+        if (["legacy_plan", "import_mod_plan", "change_report", "upgrade_report"].includes(method))
+          await rememberDirectory("projectDir", dirname(String(params.path)));
         if (method === "upgrade_plan") pendingGameDir = String(params.path);
-        if (method === "upgrade_commit" && pendingGameDir) {
+        if (method === "upgrade_commit" && pendingGameDir && preparedUpgrade) {
           prefs.gameDir = pendingGameDir;
-          await gameVersions.activate(prefs.gameDir);
+          gameVersions.usePrepared(preparedUpgrade);
           pendingGameDir = "";
-          await savePrefs();
+          try { await savePrefs(); }
+          catch { emit("operation-error", { message: "Migration completed, but the installation preference could not be saved." }); }
         }
         return result;
       } finally {
@@ -300,15 +411,24 @@ app.whenReady().then(async () => {
     if (theme !== undefined) {
       if (!["auto", "light", "dark"].includes(theme))
         throw new Error("Invalid theme");
-      prefs.theme = theme;
-      nativeTheme.themeSource = theme === "auto" ? "system" : theme;
-      await savePrefs();
+      if (operationActive) throw new Error("Finish the current operation or confirmation first");
+      operationActive = true;
+      try {
+        const next = { ...prefs, theme };
+        await savePrefs(next);
+        prefs = next;
+        nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+      } finally { operationActive = false; }
     }
     return { theme: prefs.theme };
   });
   ipcMain.handle("eu5:game-version", async (event, value) => {
     sender(event);
-    return value === undefined ? gameVersions.current() : gameVersions.set(value);
+    if (value === undefined) return gameVersions.current();
+    if (operationActive) throw new Error("Finish the current operation or confirmation first");
+    operationActive = true;
+    try { return await gameVersions.set(value); }
+    finally { operationActive = false; }
   });
   ipcMain.handle("eu5:open-link", async (event, destination) => {
     sender(event);
@@ -342,7 +462,7 @@ app.whenReady().then(async () => {
     void (async () => {
       try {
         if (!(await confirmReplace("exit"))) return;
-        [prefs.width, prefs.height] = window.getSize();
+        captureWindow();
         await savePrefs();
         closing = true;
         window.close();

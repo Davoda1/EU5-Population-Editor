@@ -1,6 +1,7 @@
 export const methods = [
   "draft_activity",
   "load_game",
+  "load_saved_game",
   "new_project",
   "status",
   "select",
@@ -34,6 +35,23 @@ export interface GameVersionPreference {
   version: string;
   source: "manual";
 }
+export interface WindowGeometry {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+export interface AppSettings {
+  theme: "auto" | "light" | "dark";
+  gameDir: string;
+  gameVersion: string;
+  autoLoad: boolean;
+  rememberWindow: boolean;
+  rememberFolders: boolean;
+  geometry: WindowGeometry | null;
+}
+export type AppSettingsUpdate = Omit<AppSettings, "geometry"> & { resetWindow?: boolean };
 export type ConfirmationAction = "cancel" | "discard" | "save";
 export interface ConfirmationPrompt {
   token: string;
@@ -50,6 +68,11 @@ export interface Bridge {
     theme?: "auto" | "light" | "dark",
   ): Promise<{ theme: "auto" | "light" | "dark" }>;
   gameVersion(value?: string): Promise<GameVersionPreference>;
+  settings(value?: AppSettingsUpdate): Promise<AppSettings>;
+  previewTheme(theme: "auto" | "light" | "dark"): Promise<void>;
+  browseGameDirectory(): Promise<string | null>;
+  installationVersion(path: string): Promise<GameVersionPreference>;
+  startup(): Promise<Status | null>;
   restart(): Promise<boolean>;
   openLink(destination: ExternalDestination): Promise<void>;
   respondConfirmation(token: string, action: ConfirmationAction): Promise<void>;

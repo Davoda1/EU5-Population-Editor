@@ -60,3 +60,59 @@ it("recovers safely from malformed settings instead of treating arbitrary metada
   await writeFile(file, JSON.stringify({ [join(install, "game")]: "1.0" }), "utf8");
   expect((await new GameVersionSettings(file).activate(install)).version).toBe("1.4.5");
 });
+
+it("previews and saves another installation without changing the active game's version", async () => {
+  const { root, install, file } = await fixture();
+  const other = join(root, "Second installation", "game");
+  await mkdir(other, { recursive: true });
+  const settings = new GameVersionSettings(file);
+  await settings.activate(install);
+  await settings.set("1.4.6");
+  expect((await settings.forPath(other)).version).toBe("1.4.5");
+  await settings.setForPath(other, "1.5.0");
+  expect(settings.current().version).toBe("1.4.6");
+  const prepared = await settings.prepare(other);
+  expect(settings.current().version).toBe("1.4.6");
+  expect(settings.usePrepared(prepared).version).toBe("1.5.0");
+  expect((await settings.forPath(install)).version).toBe("1.4.6");
+});
+
+it("rejects relative paths, control characters and files without changing the active version", async () => {
+  const { root, install, file } = await fixture();
+  const settings = new GameVersionSettings(file);
+  await settings.activate(install);
+  const regular = join(root, "not-a-directory.txt");
+  await writeFile(regular, "text");
+  for (const invalid of ["relative/game", regular]) {
+    await expect(settings.setForPath(invalid, "1.5.0")).rejects.toThrow();
+  }
+  await expect(settings.forPath(`${install}\ninvalid`)).rejects.toThrow();
+  expect(settings.current().version).toBe("1.4.5");
+  expect((await settings.forPath(`"${install}"`)).version).toBe("1.4.5");
+});
+
+it("does not commit a staged version when the application preferences cannot be saved", async () => {
+  const { install, file } = await fixture();
+  const settings = new GameVersionSettings(file);
+  await settings.activate(install);
+  await expect(settings.saveWithPreferences(install, "1.5.0", async () => {
+    throw new Error("Settings directory is read-only");
+  }, async () => { throw new Error("Rollback must not be needed"); })).rejects.toThrow("read-only");
+  expect(settings.current().version).toBe("1.4.5");
+  expect((await new GameVersionSettings(file).activate(install)).version).toBe("1.4.5");
+  expect(await readdir(join(file, ".."))).toEqual(["game-versions.json"]);
+  await settings.saveWithPreferences(install, "1.5.0", async () => {}, async () => {});
+  expect(settings.current().version).toBe("1.5.0");
+});
+
+it("retains the manual version when a saved installation is temporarily unavailable", async () => {
+  const { install, game, file } = await fixture();
+  const settings = new GameVersionSettings(file);
+  await settings.activate(install);
+  await settings.set("1.4.6");
+  await rm(install, { recursive: true });
+  expect((await settings.forPath(install)).version).toBe("1.4.6");
+  expect((await settings.forPath(game)).version).toBe("1.4.6");
+  await expect(settings.activate(install)).rejects.toThrow();
+  expect(settings.current().version).toBe("1.4.6");
+});

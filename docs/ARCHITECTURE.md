@@ -36,7 +36,7 @@ text not yet submitted for a native preview.
 
 No Python or HTTP server is used at runtime. Core work runs outside the renderer.
 The protocol is sequential within the native process: long indexing work emits
-progress but queues other commands. Indexing cannot be canceled in version 1.0.0.
+progress but queues other commands. Indexing cannot be canceled in version 1.0.1.
 The renderer's event loop remains available while waiting.
 
 ## Parser and preservation

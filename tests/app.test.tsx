@@ -9,6 +9,9 @@ import {
   act,
 } from "@testing-library/react";
 import { App } from "../src/renderer/App";
+import type { AppSettings } from "../src/types/api";
+import { version } from "../package.json";
+let settings: AppSettings;
 afterEach(cleanup);
 let working: Record<string, any>,
   draft: Record<string, any> | null,
@@ -75,9 +78,21 @@ beforeEach(() => {
   token = 0;
   modified = 0;
   gameVersion = "1.4.5";
+  settings = { theme: "dark", gameDir: "", gameVersion: "1.4.5", autoLoad: true, rememberFolders: true, rememberWindow: true, geometry: null };
   countries = [{ tag: "ALP", name: "Alpine Assembly", count: 2 }];
   window.eu5 = {
     openLink: vi.fn(async () => {}),
+    previewTheme: vi.fn(async () => {}),
+    settings: vi.fn(async (value) => {
+      if (value) {
+        settings = { ...settings, ...value, gameVersion: value.gameVersion.trim().replace(/^v/i, "") };
+        gameVersion = settings.gameVersion;
+      }
+      return { ...settings };
+    }),
+    browseGameDirectory: vi.fn(async () => "/games/Europa Universalis V"),
+    installationVersion: vi.fn(async () => ({ version: "1.4.5", source: "manual" })),
+    startup: vi.fn(async () => null),
     preferences: vi.fn(async () => ({ theme: "dark" })),
     gameVersion: vi.fn(async (value?: string) => {
       if (value !== undefined) gameVersion = value.trim().replace(/^v/i, "");
@@ -89,6 +104,9 @@ beforeEach(() => {
     request: vi.fn(async (method, params: any = {}) => {
       switch (method) {
         case "load_game":
+        case "load_saved_game":
+          settings.gameDir = "/games/Europa Universalis V";
+          return status();
         case "status":
           return status();
         case "draft_activity":
@@ -138,7 +156,9 @@ beforeEach(() => {
 });
 async function start() {
   render(<App />);
-  fireEvent.click(screen.getByText("Select EU5 game data"));
+  const load = screen.getByRole("button", { name: /Select EU5 game data|Load saved game data/ });
+  await waitFor(() => expect((load as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(load);
   fireEvent.click(await screen.findByRole("button", { name: /Alpha City/ }));
   await screen.findByRole("heading", { name: "Demographics", exact: true });
 }
@@ -233,26 +253,29 @@ it("Apply changes only the reviewed tuple and Discard never changes Working", as
   await waitFor(() => expect(working["peasants|amber|sun"].size).toBe("9"));
   expect(working["clergy|amber|sun"].size).toBe("0.999");
 });
-it("fills the existing export version field and saves a manual edit independently of project changes", async () => {
+async function changeGameVersion(value: string) {
+  fireEvent.click(screen.getByRole("button", { name: "Game settings", exact: true }));
+  fireEvent.change(screen.getByLabelText("Manual EU5 version"), { target: { value } });
+  fireEvent.click(screen.getByRole("button", { name: "Save settings", exact: true }));
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Export Mod" }));
+}
+it("uses Settings as the single place to edit the saved export game version", async () => {
   await start();
   fireEvent.click(screen.getByRole("button", { name: "Export Mod" }));
+  expect((screen.getByLabelText("Supported EU5 version") as HTMLInputElement).readOnly).toBe(true);
   expect((screen.getByLabelText("Supported EU5 version") as HTMLInputElement).value).toBe("1.4.5");
-  fireEvent.change(screen.getByLabelText("Supported EU5 version"), { target: { value: "v1.4.6" } });
-  fireEvent.click(screen.getByRole("button", { name: "Save game version" }));
-  await waitFor(() => expect((screen.getByLabelText("Supported EU5 version") as HTMLInputElement).value).toBe("1.4.6"));
-  expect(window.eu5.gameVersion).toHaveBeenCalledWith("v1.4.6");
+  await changeGameVersion("v1.4.6");
+  expect((screen.getByLabelText("Supported EU5 version") as HTMLInputElement).value).toBe("1.4.6");
+  expect(window.eu5.settings).toHaveBeenCalledWith(expect.objectContaining({ gameVersion: "v1.4.6" }));
   expect(working).toEqual(original);
   expect(modified).toBe(0);
-  cleanup();
-  await start();
-  fireEvent.click(screen.getByRole("button", { name: "Export Mod" }));
-  expect((screen.getByLabelText("Supported EU5 version") as HTMLInputElement).value).toBe("1.4.6");
 });
 it("exports the saved normalized manual version while keeping validation independent", async () => {
   modified = 1;
   await start();
   fireEvent.click(screen.getByRole("button", { name: "Export Mod" }));
-  fireEvent.change(screen.getByLabelText("Supported EU5 version"), { target: { value: "v1.4.7" } });
+  await changeGameVersion("v1.4.7");
   fireEvent.click(screen.getByLabelText(/I understand that this game version/));
   fireEvent.click(screen.getByRole("button", { name: "Choose output and export" }));
   await waitFor(() => expect(window.eu5.request).toHaveBeenCalledWith("export", {
@@ -285,7 +308,7 @@ it("sorts countries by display name, resolves equal names by tag, and searches e
 it("offers public manual, source and issue links from About", async () => {
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: /About/ }));
-  expect(screen.getByText(/Version 1.0.0/)).toBeTruthy();
+  expect(screen.getByText(new RegExp(`Version ${version.replace(/\./g, "\\.")}`))).toBeTruthy();
   expect(screen.getByText(/GNU Affero General Public License/)).toBeTruthy();
   for (const [label, destination] of [["Manual", "manual"], ["Source code", "repository"], ["Report an issue", "issues"]]) {
     fireEvent.click(screen.getByRole("button", { name: label, exact: true }));
@@ -319,18 +342,87 @@ it("exports the verified game version without an acknowledgment and resets conse
   expect(screen.queryByRole("checkbox", { name: /I understand/ })).toBeNull();
   const output = screen.getByRole("button", { name: "Choose output and export" });
   expect((output as HTMLButtonElement).disabled).toBe(false);
-  const version = screen.getByLabelText("Supported EU5 version");
-  fireEvent.change(version, { target: { value: "v1.4.6" } });
-  expect((output as HTMLButtonElement).disabled).toBe(true);
+  await changeGameVersion("v1.4.6");
+  expect((screen.getByRole("button", { name: "Choose output and export" }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole("checkbox", { name: /I understand/ }));
-  expect((output as HTMLButtonElement).disabled).toBe(false);
-  fireEvent.change(version, { target: { value: "v1.4.7" } });
-  expect((output as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button", { name: "Choose output and export" }) as HTMLButtonElement).disabled).toBe(false);
+  await changeGameVersion("v1.4.7");
+  expect((screen.getByRole("button", { name: "Choose output and export" }) as HTMLButtonElement).disabled).toBe(true);
   expect((screen.getByRole("checkbox", { name: /I understand/ }) as HTMLInputElement).checked).toBe(false);
-  fireEvent.change(version, { target: { value: "v1.4.5" } });
+  await changeGameVersion("v1.4.5");
   expect(screen.queryByRole("checkbox", { name: /I understand/ })).toBeNull();
-  fireEvent.click(output);
+  fireEvent.click(screen.getByRole("button", { name: "Choose output and export" }));
   await waitFor(() => expect(window.eu5.request).toHaveBeenCalledWith("export", {
     options: expect.objectContaining({ supported_game_version: "1.4.5", acknowledge_unverified_version: false }),
   }));
+});
+
+
+it("previews a theme and restores it on Cancel without saving preference changes", async () => {
+  render(<App />);
+  const gear = screen.getByRole("button", { name: "Settings", exact: true });
+  await waitFor(() => expect((gear as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(gear);
+  fireEvent.click(screen.getByRole("radio", { name: "Light theme" }));
+  expect(document.documentElement.dataset.theme).toBe("light");
+  fireEvent.click(screen.getByRole("tab", { name: "Game", exact: true }));
+  fireEvent.change(screen.getByLabelText("Installation directory"), { target: { value: "/games/Other installation" } });
+  fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }));
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  expect(settings.gameDir).toBe("");
+  expect(vi.mocked(window.eu5.settings).mock.calls.every(args => args.length === 0)).toBe(true);
+});
+
+it("saves browsed installation settings and the window reset as one explicit operation", async () => {
+  render(<App />);
+  const gear = screen.getByRole("button", { name: "Settings", exact: true });
+  await waitFor(() => expect((gear as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(gear);
+  fireEvent.click(screen.getByRole("tab", { name: "Game", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Browse…" }));
+  await waitFor(() => expect((screen.getByLabelText("Installation directory") as HTMLInputElement).value).toBe("/games/Europa Universalis V"));
+  fireEvent.change(screen.getByLabelText("Manual EU5 version"), { target: { value: "1.4.6" } });
+  fireEvent.click(screen.getByRole("switch", { name: /Load saved game data on startup/ }));
+  fireEvent.click(screen.getByRole("switch", { name: /Remember project and export folders/ }));
+  fireEvent.click(screen.getByRole("tab", { name: "Window", exact: true }));
+  fireEvent.click(screen.getByRole("switch", { name: /Remember window size and position/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Reset window layout" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+  await waitFor(() => expect(window.eu5.settings).toHaveBeenCalledWith({ theme: "dark", gameDir: "/games/Europa Universalis V", gameVersion: "1.4.6", autoLoad: false, rememberFolders: false, rememberWindow: false, resetWindow: true }));
+  await screen.findByRole("button", { name: "Load saved game data" });
+  expect(window.eu5.request).not.toHaveBeenCalledWith("load_game", expect.anything());
+});
+
+it("keeps settings open with an actionable validation error and retains the current project", async () => {
+  await start();
+  vi.mocked(window.eu5.settings).mockImplementation(async value => { if (value) throw Error("The directory does not contain EU5 game data."); return settings; });
+  fireEvent.click(screen.getByRole("button", { name: "Settings", exact: true }));
+  fireEvent.click(screen.getByRole("tab", { name: "Game", exact: true }));
+  fireEvent.change(screen.getByLabelText("Installation directory"), { target: { value: "/missing" } });
+  await waitFor(() => expect((screen.getByRole("button", { name: "Save settings" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+  await screen.findByText("The directory does not contain EU5 game data.");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }));
+  expect(screen.getByRole("heading", { name: "Alpha City", exact: true })).toBeTruthy();
+  expect(working).toEqual(original);
+});
+
+
+it("waits for a stored installation version and ignores a stale lookup after a manual edit", async () => {
+  render(<App />);
+  const gear = screen.getByRole("button", { name: "Settings", exact: true });
+  await waitFor(() => expect((gear as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(gear);
+  fireEvent.click(screen.getByRole("tab", { name: "Game", exact: true }));
+  let resolveVersion: (preference: { version: string; source: "manual" }) => void;
+  vi.mocked(window.eu5.installationVersion).mockImplementation(() => new Promise(resolve => { resolveVersion = resolve; }));
+  fireEvent.change(screen.getByLabelText("Installation directory"), { target: { value: "/games/Existing" } });
+  expect((screen.getByRole("button", { name: "Save settings" }) as HTMLButtonElement).disabled).toBe(true);
+  await act(async () => resolveVersion!({ version: "1.4.8", source: "manual" }));
+  expect((screen.getByLabelText("Manual EU5 version") as HTMLInputElement).value).toBe("1.4.8");
+  fireEvent.change(screen.getByLabelText("Installation directory"), { target: { value: "/games/Other" } });
+  fireEvent.change(screen.getByLabelText("Manual EU5 version"), { target: { value: "1.4.9" } });
+  await act(async () => resolveVersion!({ version: "1.4.6", source: "manual" }));
+  expect((screen.getByLabelText("Manual EU5 version") as HTMLInputElement).value).toBe("1.4.9");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }));
 });

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1
+
+- Added a Settings dialog with Appearance, Game and Window sections, accessible from the gear beside About.
+- Moved appearance controls into Settings, with immediate preview and Save/Cancel behavior.
+- Added editable installation paths, native folder browsing and manual game versions saved per installation.
+- Added optional automatic loading of the saved installation at startup.
+- Added optional window size, position and maximized-state restoration, with a layout reset.
+- Remembered project and export folders separately, with a shared opt-out.
+- Made the welcome screen fit the available window area without scrolling.
+- Updated the illustrated manual and application screenshots.
+
 ## 1.0.0
 
 Initial public edition.
