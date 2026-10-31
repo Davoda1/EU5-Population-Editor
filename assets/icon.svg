@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 64 64">
+  <title>EU5 Population Editor</title>
+  <rect width="64" height="64" rx="14" fill="#1c3450"/>
+  <path d="M13 43V23l12-7 14 7 12-7v25l-12 7-14-7-12 7z" fill="none" stroke="#b5cbea" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M25 16v25m14-18v25" stroke="#b5cbea" stroke-width="2"/>
+  <circle cx="39" cy="30" r="8" fill="#e3b76c" stroke="#1c3450" stroke-width="3"/>
+</svg>

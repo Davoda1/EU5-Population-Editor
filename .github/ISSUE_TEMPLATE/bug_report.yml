@@ -1,0 +1,23 @@
+name: Bug report
+description: Report an application defect
+title: "[Bug]: "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Application and game versions
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected result and actual result
+      description: Use synthetic examples. Do not attach game files, saved projects, credentials or private paths.
+    validations:
+      required: true

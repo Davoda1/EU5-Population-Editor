@@ -1,0 +1,181 @@
+name: Build packages
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022]
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/build/rust-target
+      RUSTFLAGS: --remap-path-prefix=${{ github.workspace }}=.
+      ELECTRON_CACHE: ${{ github.workspace }}/dependencies/electron-cache
+      ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/dependencies/electron-builder-cache
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - name: Configure Windows compiler
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: x64
+      - name: Pin the native Windows linker
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not $env:VCToolsInstallDir) { throw 'MSVC development environment is missing.' }
+          $linker = Join-Path $env:VCToolsInstallDir 'bin/Hostx64/x64/link.exe'
+          if (-not (Test-Path -LiteralPath $linker -PathType Leaf)) { throw 'Native x64 MSVC linker is missing.' }
+          "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER=$linker" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Set up Rust and its redistribution notices
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rust-docs
+          rustup override set 1.99.1
+          rustc --version
+          cargo --version
+      - name: Install Linux desktop libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0 libnss3 libasound2 libgbm1 libxss1 libxtst6 libx11-xcb1 libdrm2 libxkbcommon0 libxrandr2
+      - name: Install locked dependencies
+        shell: bash
+        run: |
+          npm ci --no-audit --no-fund
+          cargo fetch --locked --manifest-path core/Cargo.toml
+      - name: Check public metadata and source
+        run: |
+          node scripts/check-project.mjs
+          node scripts/verify-icons.mjs
+      - name: Test Rust core and React interface
+        shell: bash
+        run: |
+          cargo test --locked --manifest-path core/Cargo.toml
+          npm run test:ui
+      - name: Build application
+        shell: bash
+        run: |
+          cargo build --release --locked --manifest-path core/Cargo.toml
+          mkdir -p build/sidecar
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp build/rust-target/release/eu5-population-core.exe build/sidecar/
+          else
+            cp build/rust-target/release/eu5-population-core build/sidecar/
+          fi
+          npm run build:ui
+          node scripts/collect-notices.mjs
+      - name: Browser workflow tests
+        shell: bash
+        run: |
+          npx playwright install chromium
+          npm run test:browser
+      - name: Native desktop workflow on Linux
+        if: runner.os == 'Linux'
+        env:
+          EU5_QA_NO_SANDBOX: '1'
+        run: xvfb-run -a npm run test:desktop
+      - name: Native desktop workflow on Windows
+        if: runner.os == 'Windows'
+        run: npm run test:desktop
+      - name: Package and verify Linux
+        if: runner.os == 'Linux'
+        run: |
+          node scripts/package-linux.mjs
+          node scripts/verify-release.mjs linux
+          node scripts/source-package.mjs
+      - name: Package and verify Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          node node_modules/electron-builder/cli.js --win zip --x64 --publish never
+          node scripts/verify-release.mjs windows
+      - name: Packaged desktop workflow on Linux
+        if: runner.os == 'Linux'
+        env:
+          EU5_QA_NO_SANDBOX: '1'
+          EU5_QA_EXECUTABLE: build/packages/linux-unpacked/eu5-population-editor
+        run: xvfb-run -a npm run test:desktop
+      - name: Packaged desktop workflow on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $entry = Get-ChildItem -LiteralPath build/packages/win-unpacked -File -Filter *.exe | Where-Object { $_.Name -ne 'chrome_crashpad_handler.exe' }
+          if (@($entry).Count -ne 1) { throw 'Expected one application executable.' }
+          $env:EU5_QA_EXECUTABLE = $entry.FullName
+          npm run test:desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload verified packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: packages-${{ runner.os }}
+          path: |
+            release/*.zip
+            release/*.tar.gz
+            release/*.deb
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: diagnostics-${{ runner.os }}
+          path: |
+            build/browser-results/
+            build/browser-report.json
+            build/desktop-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+  assemble:
+    name: Verify release set
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.22.1'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: packages-*
+          path: release
+          merge-multiple: true
+      - name: Verify complete release assets and create the checksum manifest
+        run: |
+          node scripts/check-release-set.mjs
+          node scripts/checksums.mjs
+          cd release
+          sha256sum --check SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: eu5-release-bundle
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14

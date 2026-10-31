@@ -1,0 +1,41 @@
+appId: io.github.davoda1.eu5-population-editor
+productName: EU5 Population & Demographics Editor
+copyright: Copyright © 2026 davoda1
+asar: true
+npmRebuild: false
+electronDist: node_modules/electron/dist
+directories:
+  output: build/packages
+files:
+  - build/electron/**
+  - build/renderer/**
+  - package.json
+  - LICENSE.txt
+  - NOTICE.txt
+  - THIRD_PARTY_NOTICES.md
+extraResources:
+  - from: assets
+    to: assets
+  - from: LICENSE.txt
+    to: LICENSE.txt
+  - from: NOTICE.txt
+    to: NOTICE.txt
+  - from: build/sidecar
+    to: core
+  - from: docs
+    to: documentation
+  - from: THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+  - from: third-party
+    to: third-party
+win:
+  target: zip
+  artifactName: EU5-Population-Editor-${version}-Windows-x86_64-Portable.zip
+  icon: assets/icon.ico
+  signAndEditExecutable: true
+  signExecutable: false
+linux:
+  icon: assets/icons
+  executableName: eu5-population-editor
+  category: Game
+  target: dir

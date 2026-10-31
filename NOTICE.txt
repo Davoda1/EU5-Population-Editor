@@ -1,0 +1,14 @@
+EU5 Population Editor 1.0.0
+Copyright © 2026 davoda1.
+
+Original project code and documentation: GNU Affero General Public License,
+version 3 only (AGPL-3.0-only). See LICENSE.txt for the complete terms.
+Source: https://github.com/Davoda1/EU5-Population-Editor
+Manual: https://davoda1.github.io/EU5-Population-Editor-Manual/
+
+Third-party components retain their respective licenses and attribution.
+See THIRD_PARTY_NOTICES.md and third-party/.
+
+This is an unofficial tool for Europa Universalis V. It is not affiliated
+with or endorsed by Paradox Interactive. Game names and content belong to
+their respective owners. No game files or saved user projects are distributed.

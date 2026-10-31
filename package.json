@@ -1,0 +1,47 @@
+{
+  "name": "eu5-population-editor",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "Unofficial offline Europa Universalis V population and demographics editor",
+  "author": "davoda1",
+  "homepage": "https://davoda1.github.io/EU5-Population-Editor-Manual/",
+  "main": "build/electron/main.cjs",
+  "scripts": {
+    "build:ui": "tsc --noEmit && vite build && node scripts/compile-electron.mjs",
+    "test:ui": "vitest run",
+    "package:linux": "electron-builder --linux --x64 --publish never",
+    "package:windows": "electron-builder --win zip --x64 --publish never",
+    "test:browser": "playwright test",
+    "test:desktop": "node tests/desktop/workflow.mjs && node tests/desktop/confirmations.mjs"
+  },
+  "dependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.3.0",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.2",
+    "archiver": "7.0.1",
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.25.9",
+    "jsdom": "26.1.0",
+    "resedit": "1.7.2",
+    "typescript": "5.9.2",
+    "vite": "7.3.6",
+    "vitest": "5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Davoda1/EU5-Population-Editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Davoda1/EU5-Population-Editor/issues"
+  }
+}

@@ -1,0 +1,16 @@
+/toolings/*
+!/toolings/.gitkeep
+/dependencies/*
+!/dependencies/.gitkeep
+/build/*
+!/build/.gitkeep
+/release/*
+!/release/.gitkeep
+/node_modules/
+/core/target/
+/private/
+/upload/
+*.eu5popproj
+*.rgb
+*.7z
+*.log
