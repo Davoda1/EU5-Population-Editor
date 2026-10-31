@@ -7,7 +7,7 @@ import {
   stat,
   rm,
 } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import type { GameVersionPreference } from "../../src/types/api";
 
 // Verified initial game-version baseline; users can save a different version
@@ -36,6 +36,33 @@ export function installationPath(value: unknown): string {
   return path;
 }
 
+/** Compare equivalent Windows path spellings without changing POSIX case semantics. */
+export function installationPreferenceKey(path: string, platform = process.platform): string {
+  if (platform !== "win32") return path;
+  let normalized = win32.normalize(path);
+  if (normalized.slice(0, 8).toUpperCase() === "\\\\?\\UNC\\") normalized = "\\\\" + normalized.slice(8);
+  else if (normalized.startsWith("\\\\?\\")) normalized = normalized.slice(4);
+  const root = win32.parse(normalized).root;
+  if (normalized.length > root.length) normalized = normalized.replace(/[\\]+$/, "");
+  return normalized.toLowerCase();
+}
+
+async function unavailableInstallationPath(path: string): Promise<string> {
+  const absolute = resolve(installationPath(path));
+  let ancestor = absolute;
+  const suffix: string[] = [];
+  while (true) {
+    try { return join(await realpath(ancestor), ...suffix); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      const parent = dirname(ancestor);
+      if (parent === ancestor) return absolute;
+      suffix.unshift(basename(ancestor));
+      ancestor = parent;
+    }
+  }
+}
+
 export async function canonicalInstallationPath(value: unknown): Promise<string> {
   const selectedPath = installationPath(value);
   let gamePath = selectedPath;
@@ -45,7 +72,7 @@ export async function canonicalInstallationPath(value: unknown): Promise<string>
   } catch { /* selectedPath may be the game directory itself */ }
   const canonical = await realpath(gamePath);
   if (!(await stat(canonical)).isDirectory()) throw new Error("Select an installation directory, not a file.");
-  return process.platform === "win32" ? canonical.toLowerCase() : canonical;
+  return installationPreferenceKey(canonical);
 }
 
 /** Manual preferences only: never read executables or modify game/project data. */
@@ -66,7 +93,7 @@ export class GameVersionSettings {
         if (data && typeof data === "object" && !Array.isArray(data)) {
           for (const [key, value] of Object.entries(data)) {
             try {
-              this.values[key] = normalizeGameVersion(value);
+              this.values[installationPreferenceKey(key)] = normalizeGameVersion(value);
             } catch {
               /* discard invalid entries */
             }
@@ -93,8 +120,10 @@ export class GameVersionSettings {
     catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       // Preserve a saved version when a removable installation is unavailable.
-      const absolute = resolve(installationPath(selectedPath));
-      const aliases = [absolute, join(absolute, "game")].map((path) => process.platform === "win32" ? path.toLowerCase() : path);
+      // Resolve the surviving parent so short Windows names, junctions and
+      // symlinked library folders still match their saved canonical location.
+      const absolute = await unavailableInstallationPath(selectedPath);
+      const aliases = [absolute, join(absolute, "game")].map((path) => installationPreferenceKey(path));
       key = aliases.find((path) => Object.hasOwn(this.values, path)) || aliases[0];
     }
     return { version: this.values[key] || DEFAULT_GAME_VERSION, source: "manual" };

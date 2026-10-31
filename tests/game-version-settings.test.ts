@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, expect, it } from "vitest";
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { GameVersionSettings } from "../electron/main/game-version-settings";
+import { GameVersionSettings, installationPreferenceKey } from "../electron/main/game-version-settings";
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -115,4 +115,33 @@ it("retains the manual version when a saved installation is temporarily unavaila
   expect((await settings.forPath(game)).version).toBe("1.4.6");
   await expect(settings.activate(install)).rejects.toThrow();
   expect(settings.current().version).toBe("1.4.6");
+});
+
+it("resolves surviving directory aliases when an installation below them is unavailable", async () => {
+  const { root, install, file } = await fixture();
+  const alias = join(root, "Library alias");
+  await symlink(root, alias, process.platform === "win32" ? "junction" : "dir");
+  const selected = join(alias, "Installation Ω");
+  const settings = new GameVersionSettings(file);
+  await settings.activate(selected);
+  await settings.set("1.4.6");
+  await rm(install, { recursive: true });
+  const restarted = new GameVersionSettings(file);
+  expect((await restarted.forPath(selected)).version).toBe("1.4.6");
+  expect((await restarted.forPath(join(selected, "game"))).version).toBe("1.4.6");
+  await expect(restarted.activate(selected)).rejects.toThrow();
+});
+
+it("normalizes Windows separators, casing and namespace prefixes consistently", () => {
+  const expected = String.raw`c:\games\europa universalis v\game`;
+  for (const path of [
+    "C:/Games/Europa Universalis V/game/",
+    String.raw`C:\GAMES\Europa Universalis V\game`,
+    String.raw`\\?\C:\Games\Europa Universalis V\game`,
+  ]) expect(installationPreferenceKey(path, "win32")).toBe(expected);
+  expect(installationPreferenceKey(String.raw`\\?\UNC\Server\Share\EU5\game`, "win32"))
+    .toBe(String.raw`\\server\share\eu5\game`);
+  expect(installationPreferenceKey(String.raw`\\?\unc\server\share\eu5\game`, "win32"))
+    .toBe(String.raw`\\server\share\eu5\game`);
+  expect(installationPreferenceKey("/Games/EU5/game", "linux")).toBe("/Games/EU5/game");
 });
