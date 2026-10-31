@@ -39,7 +39,7 @@ The report stores OV/M/NV rows, totals, exact rational ratio, proposal and expli
 resolution. Implemented resolutions for eligible locations: keep NV, apply M,
 apply scaled M. Restricted locations allow only explicit keep NV. Directly
 reapplying old ratios onto NV and opening a conflict as a temporary normal-editor
-workspace are not implemented in version 1.0.1. Users can retain NV, commit a
+workspace are not implemented in version 1.0.2. Users can retain NV, commit a
 reviewed plan and then edit the resulting location normally if it remains
 ordinary land eligible for population editing.
 

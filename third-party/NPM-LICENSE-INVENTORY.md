@@ -262,7 +262,7 @@ Declared metadata from package-lock.json. Build dependencies are not shipped as 
 | node_modules/duplexer2 | 0.1.4 | BSD-3-Clause |
 | node_modules/eastasianwidth | 0.2.0 | MIT |
 | node_modules/ejs | 3.1.10 | Apache-2.0 |
-| node_modules/electron | 44.3.0 | MIT |
+| node_modules/electron | 45.2.1 | MIT |
 | node_modules/electron-builder | 26.15.3 | MIT |
 | node_modules/electron-builder-squirrel-windows | 26.15.3 | MIT |
 | node_modules/electron-publish | 26.15.3 | MIT |

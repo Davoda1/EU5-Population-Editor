@@ -8,7 +8,7 @@ UTF-8 JSON envelope:
   "project": {
     "format": "eu5-population-project",
     "format_version": 1,
-    "app_version": "1.0.1",
+    "app_version": "1.0.2",
     "title": "Untitled project",
     "fingerprint": "sha256-of-source-hash-map",
     "source_hashes": {},

@@ -1,7 +1,9 @@
-# Building 1.0.1
+# Building 1.0.2
+
+Release builds use Node.js **26.13.0 LTS**, its bundled npm **11.20.0**, and Electron **45.2.1 stable**. The build-time Node.js version is separate from the Node.js runtime bundled inside Electron. Local scripts cache Node.js in a version-specific tooling directory.
 
 `package-lock.json` and `core/Cargo.lock` pin the JavaScript and Rust dependencies.
-Release builds use both lockfiles. See `TESTING-REPORT.md` for the exact toolchain,
+Release builds use both lockfiles. See `TESTING-REPORT.md` for automated coverage,
 checks and runtime limitations.
 
 ## Build directories and prerequisites
@@ -15,7 +17,7 @@ binaries and private saved work.
 The scripts require an already installed compatible Rust/Cargo toolchain. They do
 not install Rust targets, change the default toolchain, edit home-directory Cargo
 configuration, or change persistent environment settings. npm, Cargo and Electron
-caches are configured for the build process. Pinned Node 24.22.1 is downloaded to the
+caches are configured for the build process. Pinned Node 26.13.0 is downloaded to the
 project and verified against the official checksum manifest when absent.
 
 Allow several gigabytes for dependencies and build products. Source build scripts
@@ -47,7 +49,7 @@ tests, production compilation, desktop tests when a display is available,
 packaging, packaged-sidecar protocol checks, Debian layout checks, source
 packaging and one SHA-256 manifest. A failed gate stops the pipeline.
 
-Pushing a semantic version tag such as `v1.0.1` starts the **Release** workflow.
+Pushing a semantic version tag such as `v1.0.2` starts the **Release** workflow.
 It checks the tag against `master` and the application version, runs the complete
 Windows and Linux build and test pipeline, and creates a draft release containing
 the verified packages and checksum manifest. Review the draft and its assets

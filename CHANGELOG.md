@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Updated the build toolchain to Node.js 26.13.0 LTS and the desktop runtime to Electron 45.2.1 stable.
+- Refreshed application and manual screenshots for 1.0.2.
+- Retained the existing editing, settings, project and export workflows.
+
 ## 1.0.1
 
 - Added a Settings dialog with Appearance, Game and Window sections, accessible from the gear beside About.

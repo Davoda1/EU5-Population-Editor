@@ -1,6 +1,6 @@
 {
   "name": "eu5-population-editor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "license": "AGPL-3.0-only",
   "description": "Unofficial offline Europa Universalis V population and demographics editor",
@@ -28,7 +28,7 @@
     "@types/react-dom": "19.1.9",
     "@vitejs/plugin-react": "5.0.2",
     "archiver": "7.0.1",
-    "electron": "44.3.0",
+    "electron": "45.2.1",
     "electron-builder": "26.15.3",
     "esbuild": "0.25.9",
     "jsdom": "26.1.0",

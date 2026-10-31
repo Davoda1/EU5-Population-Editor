@@ -33,10 +33,10 @@ function Test-Eu5Rust {
  $env:CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER = $MsvcLinker
 }
 function Initialize-Eu5Node {
- $NodeDir=Join-Path $Eu5Root 'toolings/node'
+ $NodeDir=Join-Path $Eu5Root 'toolings/node-v26.13.0'
  if (!(Test-Path -LiteralPath (Join-Path $NodeDir 'node.exe'))) {
-  Write-Host 'Preparing pinned Node.js 24.22.1 for Windows x64...'
-  $Selected = @{ version = 'v24.22.1' }
+  Write-Host 'Preparing pinned Node.js 26.13.0 for Windows x64...'
+  $Selected = @{ version = 'v26.13.0' }
   $Archive="node-$($Selected.version)-win-x64.zip"; $ArchivePath=Join-Path $Eu5Root "dependencies/$Archive"
   Invoke-WebRequest "https://nodejs.org/dist/$($Selected.version)/$Archive" -OutFile $ArchivePath -MaximumRetryCount 3
   $Sums=(Invoke-WebRequest "https://nodejs.org/dist/$($Selected.version)/SHASUMS256.txt").Content
@@ -54,8 +54,8 @@ function Initialize-Eu5Node {
 }
 function Initialize-Eu5Dependencies {
  Initialize-Eu5Node
- Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node/npm.cmd') -Arguments @('ci','--no-audit','--no-fund')
+ Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node-v26.13.0/npm.cmd') -Arguments @('ci','--no-audit','--no-fund')
  if (!(Test-Path -LiteralPath 'core/Cargo.lock')) { throw 'core/Cargo.lock is missing; restore the source package.' }
- Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node/node.exe') -Arguments @('node_modules/electron/install.js')
+ Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node-v26.13.0/node.exe') -Arguments @('node_modules/electron/install.js')
  Invoke-Eu5Tool -File cargo -Arguments @('fetch','--locked','--manifest-path','core/Cargo.toml')
 }

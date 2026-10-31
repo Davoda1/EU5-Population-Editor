@@ -8,7 +8,7 @@ The license above applies to original project code, not to third-party component
 | Component | Version | Declared license |
 |---|---|---|
 | React / React DOM | 19.1.1 | MIT |
-| Electron | 44.3.0 | MIT; embedded Chromium components have their own notices |
+| Electron | 45.2.1 | MIT; embedded Chromium components have their own notices |
 | anyhow | 1.0.100 | MIT OR Apache-2.0 |
 | serde | 1.0.228 | MIT OR Apache-2.0 |
 | serde_json | 1.0.145 | MIT OR Apache-2.0 |

@@ -23,7 +23,7 @@ mkdir -p "$EU5_ROOT/toolings" "$EU5_ROOT/dependencies" "$EU5_ROOT/build" "$EU5_R
 : >> "$npm_config_userconfig"
 : >> "$npm_config_globalconfig"
 # Do not change RUSTUP_HOME or install/update toolchains/components.
-if [[ -x "$EU5_ROOT/toolings/node/bin/node" ]]; then export PATH="$EU5_ROOT/toolings/node/bin:$PATH"; fi
+if [[ -x "$EU5_ROOT/toolings/node-v26.13.0/bin/node" ]]; then export PATH="$EU5_ROOT/toolings/node-v26.13.0/bin:$PATH"; fi
 cd -- "$EU5_ROOT"
 eu5_die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 eu5_rust_check() {
@@ -38,11 +38,11 @@ eu5_rust_check() {
   [[ "$(uname -m)" == x86_64 ]] || eu5_die 'This release targets GNU/Linux x86-64 only.'
 }
 eu5_node_prepare() {
-  if [[ ! -x "$EU5_ROOT/toolings/node/bin/node" ]]; then
+  if [[ ! -x "$EU5_ROOT/toolings/node-v26.13.0/bin/node" ]]; then
     for tool in curl tar sha256sum awk; do command -v "$tool" >/dev/null || eu5_die "Missing prerequisite: $tool"; done
-    printf '\nPreparing pinned Node.js 24.22.1 for linux-x64...\n'
+    printf '\nPreparing pinned Node.js 26.13.0 for linux-x64...\n'
     local version archive expected actual
-    version="v24.22.1"
+    version="v26.13.0"
     [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || eu5_die 'Invalid pinned Node.js version.'
     archive="node-$version-linux-x64.tar.xz"
     curl --fail --location --retry 3 --connect-timeout 30 --max-time 900 "https://nodejs.org/dist/$version/$archive" -o "dependencies/$archive"
@@ -51,9 +51,9 @@ eu5_node_prepare() {
     actual="$(sha256sum "dependencies/$archive")"; actual="${actual%% *}"
     [[ -n "$expected" && "$expected" == "$actual" ]] || eu5_die 'Official Node archive checksum mismatch; archive will not be extracted.'
     tar -xJf "dependencies/$archive" -C toolings
-    mv -- "toolings/node-$version-linux-x64" toolings/node
+    mv -- "toolings/node-$version-linux-x64" toolings/node-v26.13.0
   fi
-  export PATH="$EU5_ROOT/toolings/node/bin:$PATH"
+  export PATH="$EU5_ROOT/toolings/node-v26.13.0/bin:$PATH"
   { printf 'Node: '; node --version; printf 'npm: '; npm --version; printf 'npx: '; npx --version; } | tee build/tooling-manifest.txt
 }
 eu5_dependencies() {

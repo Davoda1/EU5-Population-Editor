@@ -5,6 +5,6 @@ Initialize-Eu5Dependencies
 Invoke-Eu5Tool -File cargo -Arguments @('build','--release','--locked','--manifest-path','core/Cargo.toml')
 New-Item -ItemType Directory -Force 'build/sidecar' | Out-Null
 Copy-Item -LiteralPath (Join-Path $env:CARGO_TARGET_DIR 'release/eu5-population-core.exe') -Destination 'build/sidecar/eu5-population-core.exe'
-Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node/npm.cmd') -Arguments @('run','build:ui')
+Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node-v26.13.0/npm.cmd') -Arguments @('run','build:ui')
 
-Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node/node.exe') -Arguments @('scripts/collect-notices.mjs')
+Invoke-Eu5Tool -File (Join-Path $Eu5Root 'toolings/node-v26.13.0/node.exe') -Arguments @('scripts/collect-notices.mjs')
