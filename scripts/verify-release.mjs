@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
+import assert from "node:assert/strict";
 import { readFile, access, copyFile, mkdir, stat, lstat, readdir, mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { verifyIcons, verifyWindowsIcon, iconSizes } from "./verify-icons.mjs";
+import { manualHashes } from "./check-manual.mjs";
 function run(file, args) {
   const r = spawnSync(file, args, { encoding: "utf8", shell: false, maxBuffer: 32 * 1024 * 1024 });
   if (r.error || r.status !== 0) throw new Error(`${file}: ${r.stderr || r.error}`);
@@ -28,6 +30,10 @@ const sidecar = join(root, "resources/core", exe);
 await access(sidecar);
 if ((await stat(sidecar)).size < 10000) throw new Error("Sidecar is implausibly small");
 await access(join(root, "resources/app.asar"));
+const manualManifest = JSON.parse(await readFile("docs/manual/manifest.json", "utf8"));
+assert.equal(manualManifest.version, version, "Manual version does not match the package");
+assert.deepEqual(await manualHashes(join(root, "resources/manual")), manualManifest.sha256.site,
+  "Packaged manual differs from its frozen source snapshot; clean the package output and rebuild");
 await verifyIcons(join(root, "resources/assets"));
 for (const file of ["icon.svg", "icon.ico", ...iconSizes.map(size => `icons/${size}.png`)]) {
   if (!(await readFile(join(root, "resources/assets", file))).equals(await readFile(join("assets", file))))

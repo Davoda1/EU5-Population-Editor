@@ -1,0 +1,21 @@
+{
+  "version": "1.0.3",
+  "edition": "offline",
+  "pages": [
+    "index.html",
+    "installation.html",
+    "first-project.html",
+    "navigation.html",
+    "editing.html",
+    "ratios.html",
+    "projects.html",
+    "export.html",
+    "migration.html",
+    "import.html",
+    "validation.html",
+    "settings.html",
+    "troubleshooting.html",
+    "privacy.html",
+    "release-notes.html"
+  ]
+}

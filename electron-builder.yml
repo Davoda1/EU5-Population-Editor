@@ -24,6 +24,14 @@ extraResources:
     to: core
   - from: docs
     to: documentation
+    filter:
+      - "**/*"
+      - "!manual/**/*"
+  - from: docs/manual/site
+    to: manual
+    filter:
+      - "**/*"
+      - "!.nojekyll"
   - from: THIRD_PARTY_NOTICES.md
     to: THIRD_PARTY_NOTICES.md
   - from: third-party

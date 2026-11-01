@@ -8,7 +8,7 @@ UTF-8 JSON envelope:
   "project": {
     "format": "eu5-population-project",
     "format_version": 1,
-    "app_version": "1.0.2",
+    "app_version": "1.0.3",
     "title": "Untitled project",
     "fingerprint": "sha256-of-source-hash-map",
     "source_hashes": {},
@@ -32,6 +32,11 @@ Population rows have `type`, `culture`, `religion`, decimal-string `size`, and
 allowing unknown field preservation. Baseline non-population semantics are stored
 canonically for migration conflict detection. Only modified locations store rows.
 Unmodified world keys and country associations store identifiers, not game files.
+
+`size` retains the game's thousand-person unit: `"1"` means 1,000 people and
+`"0.001"` means one person. Version 1.0.3 converts these values only at the UI
+boundary and keeps format 1. Existing fractional-person values remain exact in
+saved projects; whole-person validation applies when creating new absolute edits.
 
 `source_hashes` keys are game-relative paths. The project has no absolute-path
 identity. UI preferences can remember game/project directories separately. Names

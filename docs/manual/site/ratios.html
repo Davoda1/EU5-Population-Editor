@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" data-edition="offline">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rebalance demographics · EU5 Population Editor</title>
+<meta name="description" content="Use Rebalance proportions to change demographic shares without changing the location&#x27;s total. Use Scale Population separately when the total itself should.">
+<meta name="color-scheme" content="light dark">
+<meta name="eu5-manual-version" content="1.0.3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/manual.css?v=1.0.3">
+<script src="assets/theme.js?v=1.0.3"></script>
+<script src="assets/search-index.js?v=1.0.3" defer></script><script src="assets/manual.js?v=1.0.3" defer></script>
+</head>
+<body data-page="ratios" data-version="1.0.3" data-edition="offline">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="index.html" aria-label="EU5 Population Editor manual home"><img src="assets/favicon.svg" width="30" height="30" alt=""><span>EU5 Population Editor</span></a>
+  <span class="header-divider" aria-hidden="true"></span><span class="site-label">Manual</span>
+  <nav class="header-links" aria-label="Project"><a href="https://github.com/Davoda1/EU5-Population-Editor/releases" aria-label="Download EU5 Population Editor 1.0.3">Downloads <span aria-hidden="true">↗</span></a><a href="https://github.com/Davoda1/EU5-Population-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <button class="icon-button mobile-search search-trigger" aria-label="Search manual"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+
+ </div>
+</header>
+<div class="manual-layout">
+ <aside class="sidebar" aria-label="Manual navigation">
+  <button class="search-trigger search-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Search manual</span><kbd>/</kbd></button>
+  <nav aria-label="Chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html" aria-current="page">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav>
+  <div class="sidebar-meta"><span class="version-label">Version 1.0.3</span><span>Bundled offline manual</span><span>Windows &amp; Linux</span></div>
+ </aside>
+ <div class="mobile-navigation"><details><summary>Browse manual <span>Ratios and totals</span></summary><nav aria-label="Mobile chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html" aria-current="page">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav></details></div>
+ <main id="main" tabindex="-1">
+  <div class="breadcrumb"><a href="index.html">Manual</a><span aria-hidden="true">/</span><span>Editing population</span></div>
+  <article><header class="article-header"><p class="edition">EU5 Population Editor 1.0.3</p><h1>Rebalance demographics</h1></header><p class="lead">Use Rebalance proportions to change demographic shares without changing the location's total. Use Scale Population separately when the total itself should change.</p>
+<h2 id="enter-weights">Enter weights</h2>
+<p>Choose <strong>Rebalance ratios</strong>, then select the culture, religion or population-type axis. Enter one known identifier and weight on each line:</p>
+<pre><code class="language-text">identifier_one = 7
+identifier_two = 3
+</code></pre>
+<p>These identifiers are placeholders, not game identifiers. Replace them with names present in your loaded definitions. Weights of 7 and 3 request shares of 70 percent and 30 percent; the editor normalizes them. Weights of 70 and 30 express the same proportions.</p>
+<blockquote>
+<p>Omitted groups receive zero on the selected axis. Include every group you intend to retain.</p>
+</blockquote>
+<p>Repeated identifiers, malformed lines and unknown definitions are rejected. The normalized shares are shown before review. Use <strong>Review draft</strong> to inspect the actual population rows and exact total.</p>
+<h2 id="default-preservation">Default preservation</h2>
+<p>The default mode preserves each existing group's internal demographic structure where possible. A newly introduced group uses the location's profile. For example, changing culture shares does not require you to manually recreate every religion and population-type combination.</p>
+<p>If a retained group's rows are all zero, those rows no longer encode their earlier proportions. Restoring a positive share divides people evenly across the retained rows, using deterministic one-person remainder allocation; their demographic identities and additional fields are preserved. This does not restore historical ratios that were lost when the sizes became zero.</p>
+<h2 id="advanced-preservation">Advanced preservation</h2>
+<p>Expand <strong>Advanced preservation</strong> to preserve each complementary demographic bucket independently. If culture is the edited axis, the complementary buckets are combinations of religion and population type.</p>
+<p>This option redistributes the chosen axis inside each bucket. Allocation in whole-person steps can produce small differences from the requested overall percentages while each preserved total remains exact. Compare the resulting rows before applying.</p>
+<p>Legacy data with a fractional-person location total cannot be rebalanced into whole people while preserving that same total. Advanced preservation also requires whole-person totals for every preserved bucket. The editor reports these cases. Choose an explicit whole-person target with <strong>Scale Population → Set exact value / target</strong>, review the resulting distribution, and then retry the rebalance. It does not silently round the old totals.</p>
+<h2 id="change-the-total-separately">Change the total separately</h2>
+<p>Choose <strong>Scale Population</strong> for an exact target, absolute change, percentage change or multiplier. For example, a multiplier of <code>1.1</code> requests a ten-percent increase in total population. Review the proposed total and distribution, then apply it.</p>
+<p>The application uses exact arithmetic and deterministic allocation, with population shown in people. For example, a <code>10000</code> target means 10,000 people and is stored as source size <code>10</code> in the game file. Existing project and game-file values retain their exact source-unit representation. See <a href="editing.html#population-units">Population units</a> for the treatment of legacy fractions.</p></article>
+  <nav class="page-navigation" aria-label="Adjacent chapters"><a class="previous" href="editing.html"><span>Previous</span><strong>Draft and Apply </strong></a><a class="next" href="projects.html"><span>Next</span><strong>Save and reopen →</strong></a></nav>
+   <footer class="article-footer"><span>EU5 Population Editor documentation · © 2026 davoda1</span><a href="https://davoda1.github.io/EU5-Population-Editor-Manual/">Latest online manual <span aria-hidden="true">↗</span></a><a href="LICENSE.txt">AGPLv3</a></footer>
+ </main>
+ <aside class="page-outline" aria-label="On this page"><div><p>On this page</p><ul><li><a href="#enter-weights">Enter weights</a></li><li><a href="#default-preservation">Default preservation</a></li><li><a href="#advanced-preservation">Advanced preservation</a></li><li><a href="#change-the-total-separately">Change the total separately</a></li></ul><a class="help-link" href="troubleshooting.html">Need help?</a><a class="outline-source" href="https://github.com/Davoda1/EU5-Population-Editor/issues">Report an issue ↗</a></div></aside>
+</div>
+<dialog id="search-dialog" aria-labelledby="search-title">
+ <div class="search-heading"><h2 id="search-title">Search the manual</h2><button class="dialog-close" aria-label="Close search">Esc</button></div>
+ <div class="search-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search-input" type="search" placeholder="Search topics, settings, shortcuts…" autocomplete="off" aria-label="Search manual pages" aria-controls="search-results"></div>
+ <p id="search-status" aria-live="polite">Type a topic to find a page.</p><ul id="search-results"></ul>
+ <div class="search-footer">Search runs in your browser. No queries are sent.</div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>

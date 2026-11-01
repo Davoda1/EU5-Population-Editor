@@ -13,15 +13,46 @@ The shared Method union is allowlisted independently in preload and main. Main
 removes renderer-supplied path/cache fields and inserts paths obtained through
 native file pickers or its own fixed application cache directory. Renderer code has
 no Node APIs. Permissions, remote requests, webviews, new windows and navigation
-are rejected. About links pass only fixed destination identifiers through trusted
-IPC to the system browser; arbitrary URLs are refused. Local CSP forbids renderer connections, objects and forms.
+are rejected. About actions pass only fixed destination identifiers through trusted
+IPC: Manual opens the bundled guide, while repository, issues and Online manual
+open their fixed URLs in the system browser. Arbitrary URLs are refused. Local
+CSP forbids renderer connections, objects and forms.
 
 React owns pending input forms keyed by location. `Review draft` asks the native
 core to calculate a proposal. Rust stores it separately and issues a monotonically
 increasing token. Apply requires that token. Inputs changed after review disable
 Apply. Working-only save/export cannot access renderer forms or Rust drafts.
 Main is informed of unreviewed form activity so close/replacement prompts include
-text not yet submitted for a native preview.
+text not yet submitted for a native preview. Migration commit is also blocked
+while these forms or reviewed core Drafts are pending.
+
+## Offline manual
+
+`docs/manual/source/` contains the editable documentation snapshot;
+`docs/manual/site/` contains its generated offline edition. A manifest pins the
+application version and SHA-256 inventory of both. Ordinary builds validate this
+snapshot without Python or network access. The explicit `bundle-manual.mjs`
+maintainer command regenerates it from local source using Python and the manual's
+pinned Markdown dependency, then replaces it only after validation succeeds.
+
+Electron packages the generated edition at `resources/manual/` and serves it
+through the private `eu5-manual://manual/` protocol in a separate window. The
+protocol permits only manual resources, checks real paths, and supplies a local
+content policy. There is no localhost server or listening port. Search, themes,
+images and navigation work offline. This window has its own session, no preload,
+no Node integration and no editor bridge; editor IPC also rejects its sender.
+Network requests and downloads are blocked. Explicit links to the project's
+GitHub repositories and hosted manual may open in the system browser.
+
+The embedded manual follows the application's active Appearance setting,
+including preview and cancellation. The protocol adds an allowlisted initial
+theme value before page scripts run; a one-way event updates the open document
+without navigation or loss of scroll position. The offline edition ignores
+browser theme storage and has no independent theme selector. The hosted edition
+retains its own local preference and theme button.
+
+Repeated or concurrent opens reuse one manual window. Closing the guide leaves
+editor forms and Working changes intact; closing the editor closes its guide.
 
 ## Core modules
 
@@ -36,7 +67,7 @@ text not yet submitted for a native preview.
 
 No Python or HTTP server is used at runtime. Core work runs outside the renderer.
 The protocol is sequential within the native process: long indexing work emits
-progress but queues other commands. Indexing cannot be canceled in version 1.0.2.
+progress but queues other commands. Indexing cannot be canceled in version 1.0.3.
 The renderer's event loop remains available while waiting.
 
 ## Parser and preservation
@@ -56,14 +87,30 @@ Unsupported formats or duplicate authoritative locations are errors, not guesses
 
 ## Exact mathematics
 
-All IPC and project numbers are strings. Native arithmetic uses BigInt-backed
-BigRational. Decimal input supports at most 28 fractional places and 128 total
-characters; greater input precision fails explicitly. There is no floating-point
-population calculation. Operations use at least source precision (minimum three
-fractional places for newly apportioned values). A rounded target is allocated
-with floor plus descending fractional remainders, breaking ties by stable index.
-Ratios and total scaling are separate operations. Map geometry may use ordinary
-coordinates; it does not affect population values.
+All IPC and project population numbers remain strings in EU5 thousand-person
+units. The UI uses exact BigInt conversion to display people and convert whole
+absolute inputs back to game units. Native arithmetic uses BigInt-backed
+BigRational. Stored source decimals support at most 28 fractional places and
+128 total characters; greater input precision fails explicitly.
+
+New absolute population inputs must represent whole people (multiples of 0.001
+game units). Decimal percentages, factors and ratio weights remain dimensionless.
+New edited rows are allocated at three game-unit decimal places: one person.
+Percentage/factor targets round to the nearest person, with halves upward for
+nonnegative population. Floor plus descending fractional remainder distributes
+the rounded target, breaking ties by stable index. Standard rebalancing preserves
+the existing total; Advanced preserves every complementary bucket. Fractional
+preserved totals are rejected with an explicit normalization instruction.
+
+Existing fractional values are displayed exactly and flagged, including fractions
+hidden in duplicate raw rows. Loading, saving, unchanged export and migration do
+not normalize historical data. Generic scaling keeps caller-selected precision
+for migration. Ratios and total scaling remain separate operations. Map geometry
+may use ordinary coordinates; it does not affect population values.
+
+Human-readable Markdown and CSV reports use exact people, including any preserved
+legacy fractions. JSON reports retain existing raw game-unit objects and include
+explicit unit metadata and additional people projections.
 
 ## Map cache
 

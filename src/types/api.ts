@@ -61,7 +61,7 @@ export interface ConfirmationPrompt {
   unavailable: boolean;
   error: string;
 }
-export type ExternalDestination = "repository" | "issues" | "manual";
+export type ExternalDestination = "repository" | "issues" | "manual" | "online-manual";
 export interface Bridge {
   request<T = unknown>(method: Method, params?: Params): Promise<T>;
   preferences(
@@ -103,6 +103,9 @@ export interface Location {
   working_total: string;
   draft_total: string | null;
   draft_token: number | null;
+  original_fractional_people?: boolean;
+  working_fractional_people?: boolean;
+  draft_fractional_people?: boolean;
   region: {
     min_x: number;
     min_y: number;

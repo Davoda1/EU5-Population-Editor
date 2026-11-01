@@ -4,6 +4,15 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{One, Signed, ToPrimitive, Zero};
 pub type Q = BigRational;
+/// EU5 stores population in thousands: three fractional places represent one person.
+pub const PEOPLE_PRECISION: usize = 3;
+pub fn is_whole_people(value: &Q) -> bool {
+    (value * Q::from_integer(1000.into())).is_integer()
+}
+/// Exact presentation conversion; stored source/project quantities remain unchanged.
+pub fn people(value: &Q) -> String {
+    format(&(value * Q::from_integer(1000.into())), 28)
+}
 pub fn precision(s: &str) -> usize {
     s.split_once('.').map_or(0, |(_, f)| f.len())
 }

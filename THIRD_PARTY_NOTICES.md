@@ -60,11 +60,12 @@ recorded in the release testing report and are only a point-in-time observation.
 ## Game content and screenshots
 
 No EU5 game data files, original map rasters or saved user projects are included.
-Synthetic fixtures are newly authored test data. The screenshots in
-`docs/extras/workspace-*.png` and `docs/extras/edit-review.png` show the editor
-using locally loaded game data. Game-derived geography, identifiers and population
-data remain the property of their respective owners; the project's AGPL license
-does not grant rights over that third-party content.
+Synthetic fixtures are newly authored test data. The version 1.0.3 screenshots in
+`docs/extras/workspace-*.png`, `docs/extras/edit-review.png` and the bundled manual
+show the actual editor using fictional demonstration populations and an
+illustrative, generated map. They do not include shipped EU5 game data or map
+rasters. The project's AGPL license does not grant rights over third-party game
+content that users load separately.
 
 Europa Universalis V and associated marks/content belong to their owners. This
 tool is not affiliated with or endorsed by Paradox Interactive.

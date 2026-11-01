@@ -8,10 +8,13 @@ import {
   Menu,
   shell,
   screen,
+  protocol,
 } from "electron";
 import { mkdirSync } from "node:fs";
 import { ConfirmationController } from "./confirmation";
 import { externalLink } from "./external-links";
+import { ManualWindow } from "./manual";
+import { MANUAL_SCHEME } from "./manual-paths";
 import { join, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
@@ -26,6 +29,7 @@ import {
 import { methods, Method, Status, ConfirmationPrompt, AppSettings, AppSettingsUpdate } from "../../src/types/api";
 import { defaultPreferences, readPreferences, windowBounds, MIN_WINDOW_SIZE, Preferences } from "./app-settings";
 app.setName("eu5-population-editor");
+protocol.registerSchemesAsPrivileged([{ scheme: MANUAL_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 if (process.platform === "linux") app.commandLine.appendSwitch("class", "eu5-population-editor");
 // A stable directory independent of the display name. Respect explicit profile
 // overrides used by isolated desktop tests and administrator-managed launches.
@@ -41,6 +45,7 @@ let rendererDrafts = false;
 let pendingGameDir = "";
 let hasProject = false;
 let operationActive = false;
+let manual: ManualWindow;
 let prefs: Preferences = defaultPreferences();
 const prefPath = () => join(app.getPath("userData"), "preferences.json");
 let preferenceWrites = Promise.resolve();
@@ -162,6 +167,7 @@ app.whenReady().then(async () => {
     },
   });
   Menu.setApplicationMenu(null);
+  manual = new ManualWindow(window, prefs.theme);
   if (prefs.rememberWindow && prefs.geometry?.maximized) window.maximize();
   window.webContents.on("render-process-gone", () => confirmations.abort());
   window.webContents.on("destroyed", () => confirmations.abort());
@@ -227,10 +233,11 @@ app.whenReady().then(async () => {
     if (typeof path !== "string") throw new Error("Enter an installation directory.");
     return gameVersions.forPath(path);
   });
-  ipcMain.handle("eu5:preview-theme", (event, theme) => {
+  ipcMain.handle("eu5:preview-theme", async (event, theme) => {
     sender(event);
     if (!["auto", "light", "dark"].includes(theme)) throw new Error("Invalid theme");
     nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+    await manual.setTheme(theme);
   });
   ipcMain.handle("eu5:settings", async (event, value?: AppSettingsUpdate) => {
     sender(event);
@@ -264,6 +271,7 @@ app.whenReady().then(async () => {
       else await savePrefs(next);
       prefs = next;
       nativeTheme.themeSource = prefs.theme === "auto" ? "system" : prefs.theme;
+      await manual.setTheme(prefs.theme);
       if (value.resetWindow) {
         const area = screen.getDisplayMatching(window.getBounds()).workArea;
         if (window.isMaximized()) {
@@ -299,6 +307,8 @@ app.whenReady().then(async () => {
         rendererDrafts = input.active === true;
         return true;
       }
+      if (method === "upgrade_commit" && rendererDrafts)
+        throw new Error("Apply or discard pending Draft edits before upgrading.");
       const readOnly = ["status", "locations", "location", "map_tile", "map_hit", "validate", "select"].includes(method);
       if (!readOnly && operationActive) throw new Error("Finish the current operation or confirmation first");
       if (!readOnly) operationActive = true;
@@ -418,6 +428,7 @@ app.whenReady().then(async () => {
         await savePrefs(next);
         prefs = next;
         nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+        await manual.setTheme(theme);
       } finally { operationActive = false; }
     }
     return { theme: prefs.theme };
@@ -432,7 +443,8 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("eu5:open-link", async (event, destination) => {
     sender(event);
-    await shell.openExternal(externalLink(destination));
+    if (destination === "manual") await manual.open();
+    else await shell.openExternal(externalLink(destination));
   });
   ipcMain.handle("eu5:confirmation-response", async (event, token, action) => {
     sender(event);

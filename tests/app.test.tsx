@@ -169,11 +169,62 @@ async function edit() {
   fireEvent.click(within(row).getByRole("button", { name: "Edit" }));
   await screen.findByLabelText("Draft value");
 }
+it("restores a saved country and location without sending the previous country to the core", async () => {
+  vi.mocked(window.eu5.startup).mockResolvedValue({ ...status(), selected_country: "ALP", selected_location: "alpha" });
+  render(<App />);
+  await screen.findByRole("heading", { name: "Alpha City", exact: true });
+  expect((screen.getByLabelText("Country") as HTMLSelectElement).value).toBe("ALP");
+  expect(window.eu5.request).toHaveBeenCalledWith("select", { country: "ALP", location: "alpha" });
+});
+it("does not mistake inherited object properties for pending location forms", async () => {
+  const request = vi.mocked(window.eu5.request);
+  const originalRequest = request.getMockImplementation()!;
+  request.mockImplementation((method, params) => method === "locations"
+    ? Promise.resolve({ total: 1, items: [{ key: "constructor", name: "Constructor City", modified: false, draft: false }] })
+    : originalRequest(method, params));
+  render(<App />);
+  const load = screen.getByRole("button", { name: /Select EU5 game data|Load saved game data/ });
+  await waitFor(() => expect((load as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(load);
+  const target = await screen.findByRole("button", { name: /Constructor City/ });
+  expect(target.textContent).not.toContain("Draft");
+  fireEvent.click(target);
+  await screen.findByRole("heading", { name: "Demographics", exact: true });
+  expect(screen.queryByRole("heading", { name: "Draft edit", exact: true })).toBeNull();
+  await edit();
+  expect((screen.getByLabelText("Draft value") as HTMLInputElement).value).toBe("7001");
+});
+it("shows grouped people while exact-edit inputs and IPC remain unambiguous", async () => {
+  await start();
+  const row = screen.getAllByRole("row").find((r) => r.textContent?.includes("peasants"))!;
+  expect(within(row).getAllByText("7,001")).toHaveLength(2);
+  expect(screen.getAllByText("8,000").length).toBeGreaterThan(0);
+  await edit();
+  expect((screen.getByLabelText("Draft value") as HTMLInputElement).value).toBe("7001");
+  fireEvent.change(screen.getByLabelText("Draft value"), { target: { value: "1" } });
+  fireEvent.click(screen.getByRole("button", { name: "Review draft", exact: true }));
+  await waitFor(() => expect(window.eu5.request).toHaveBeenCalledWith("preview", {
+    key: "alpha", operation: { kind: "exact", tuple: "peasants|amber|sun", mode: "set", value: "0.001" },
+  }));
+  expect(working).toEqual(original);
+});
+it("displays existing fractional people exactly and rejects a fractional absolute replacement", async () => {
+  working["peasants|amber|sun"].size = "0.0005";
+  await start();
+  expect(screen.getByText(/Some source rows contain fractional people/)).toBeTruthy();
+  await edit();
+  expect((screen.getByLabelText("Draft value") as HTMLInputElement).value).toBe("0.5");
+  fireEvent.click(screen.getByRole("button", { name: "Review draft", exact: true }));
+  await screen.findByRole("alert");
+  expect(screen.getByRole("alert").textContent).toContain("whole number of people");
+  expect(vi.mocked(window.eu5.request).mock.calls.some(([method]) => method === "preview")).toBe(false);
+  expect(working["peasants|amber|sun"].size).toBe("0.0005");
+});
 it("saves Working while a reviewed Draft stays pending", async () => {
   await start();
   await edit();
   fireEvent.change(screen.getByLabelText("Draft value"), {
-    target: { value: "99" },
+    target: { value: "99000" },
   });
   fireEvent.click(
     screen.getByRole("button", { name: "Review draft", exact: true }),
@@ -196,7 +247,7 @@ it("preserves an unreviewed typed form across location navigation", async () => 
   await start();
   await edit();
   fireEvent.change(screen.getByLabelText("Draft value"), {
-    target: { value: "42.001" },
+    target: { value: "42001" },
   });
   fireEvent.click(screen.getByRole("button", { name: /Beta City/ }));
   await screen.findByRole("heading", { name: "Beta City" });
@@ -204,15 +255,58 @@ it("preserves an unreviewed typed form across location navigation", async () => 
   await waitFor(() =>
     expect(
       (screen.getByLabelText("Draft value") as HTMLInputElement).value,
-    ).toBe("42.001"),
+    ).toBe("42001"),
   );
   expect(working).toEqual(original);
+});
+it("keeps the requested edit stable while a preview response is pending", async () => {
+  await start();
+  await edit();
+  fireEvent.change(screen.getByLabelText("Draft value"), { target: { value: "9000" } });
+  const request = vi.mocked(window.eu5.request);
+  const originalRequest = request.getMockImplementation()!;
+  let finishPreview!: () => void;
+  request.mockImplementation((method, params) => method === "preview"
+    ? new Promise(resolve => { finishPreview = () => resolve(originalRequest(method, params)); })
+    : originalRequest(method, params));
+  fireEvent.click(screen.getByRole("button", { name: "Review draft", exact: true }));
+  for (const name of ["Add Population Group", "Rebalance ratios", "Scale Population", "Remove group", "Edit"]) {
+    for (const button of screen.getAllByRole("button", { name, exact: true })) {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+      fireEvent.click(button);
+    }
+  }
+  expect((screen.getByLabelText("Operation") as HTMLSelectElement).value).toBe("exact");
+  await act(async () => finishPreview());
+  await waitFor(() => expect((screen.getByRole("button", { name: "Apply", exact: true }) as HTMLButtonElement).disabled).toBe(false));
+  expect((screen.getByLabelText("Draft value") as HTMLInputElement).value).toBe("9000");
+  expect(draft?.["peasants|amber|sun"].size).toBe("9");
+  expect(working).toEqual(original);
+});
+it("ignores an older navigation response after reviewing the current location", async () => {
+  await start();
+  await edit();
+  fireEvent.change(screen.getByLabelText("Draft value"), { target: { value: "9000" } });
+  const request = vi.mocked(window.eu5.request);
+  const originalRequest = request.getMockImplementation()!;
+  const staleLocation = location("beta");
+  let finishNavigation!: () => void;
+  request.mockImplementation((method, params) => method === "location" && params?.key === "beta"
+    ? new Promise(resolve => { finishNavigation = () => resolve(staleLocation); })
+    : originalRequest(method, params));
+  fireEvent.click(screen.getByRole("button", { name: /Beta City/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Review draft", exact: true }));
+  await waitFor(() => expect((screen.getByRole("button", { name: "Apply", exact: true }) as HTMLButtonElement).disabled).toBe(false));
+  await act(async () => finishNavigation());
+  expect(screen.getByRole("heading", { name: "Alpha City", exact: true })).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Apply", exact: true }) as HTMLButtonElement).disabled).toBe(false);
+  expect(request).not.toHaveBeenCalledWith("select", expect.objectContaining({ location: "beta" }));
 });
 it("Apply changes only the reviewed tuple and Discard never changes Working", async () => {
   await start();
   await edit();
   fireEvent.change(screen.getByLabelText("Draft value"), {
-    target: { value: "9" },
+    target: { value: "9000" },
   });
   fireEvent.click(
     screen.getByRole("button", { name: "Review draft", exact: true }),
@@ -234,7 +328,7 @@ it("Apply changes only the reviewed tuple and Discard never changes Working", as
   expect(working).toEqual(original);
   await edit();
   fireEvent.change(screen.getByLabelText("Draft value"), {
-    target: { value: "9" },
+    target: { value: "9000" },
   });
   fireEvent.click(
     screen.getByRole("button", { name: "Review draft", exact: true }),
@@ -310,7 +404,7 @@ it("offers public manual, source and issue links from About", async () => {
   fireEvent.click(screen.getByRole("button", { name: /About/ }));
   expect(screen.getByText(new RegExp(`Version ${version.replace(/\./g, "\\.")}`))).toBeTruthy();
   expect(screen.getByText(/GNU Affero General Public License/)).toBeTruthy();
-  for (const [label, destination] of [["Manual", "manual"], ["Source code", "repository"], ["Report an issue", "issues"]]) {
+  for (const [label, destination] of [["Manual", "manual"], ["Online manual", "online-manual"], ["Source code", "repository"], ["Report an issue", "issues"]]) {
     fireEvent.click(screen.getByRole("button", { name: label, exact: true }));
     expect(window.eu5.openLink).toHaveBeenCalledWith(destination);
   }

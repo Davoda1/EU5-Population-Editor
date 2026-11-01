@@ -1,6 +1,6 @@
 use crate::{
     editing::decimal as d,
-    model::{population as p, Game},
+    model::{population as p, Game, Pop},
     parser,
     project::Project,
 };
@@ -82,7 +82,7 @@ pub fn population_files(game: &Game, project: &Project) -> Result<BTreeMap<Strin
         for (key, loc) in &parsed {
             if let Some(c) = project.changes.get(key) {
                 ensure!(
-                    p::canonical(&loc.pops)? == p::canonical(&c.working)?,
+                    p::equivalent(&loc.pops, &c.working)?,
                     "Export semantic verification failed for {key}"
                 );
             } else {
@@ -107,35 +107,62 @@ pub fn changes(game: &Game, project: &Project) -> Result<serde_json::Value> {
         } else {
             Some(d::format(&(&delta / &a * d::parse("100")?), 6))
         };
-        rows.push(serde_json::json!({"key":key,"name":game.names.get(key).unwrap_or(key),"country":game.owners.get(key),"original_total":d::format(&a,28),"working_total":d::format(&b,28),"delta":d::format(&delta,28),"percentage_delta":pct,"original":c.baseline,"working":c.working}));
+        rows.push(serde_json::json!({
+            "key":key,"name":game.names.get(key).unwrap_or(key),"country":game.owners.get(key),
+            "units":{"raw_population":"thousands_of_people","population_people":"people","percentage_delta":"percent"},
+            "original_total":d::format(&a,28),"working_total":d::format(&b,28),"delta":d::format(&delta,28),
+            "original_total_people":d::people(&a),"working_total_people":d::people(&b),"delta_people":d::people(&delta),
+            "percentage_delta":pct,"original":c.baseline,"working":c.working,
+            "original_people":people_rows(&c.baseline)?,"working_people":people_rows(&c.working)?
+        }));
     }
     Ok(serde_json::json!(rows))
 }
+/// Parallel report projection: keep raw Pop objects unchanged and deserializable.
+pub(crate) fn people_rows(rows: &[Pop]) -> Result<serde_json::Value> {
+    let converted = rows
+        .iter()
+        .map(|row| {
+            let size = d::nonnegative(&row.size)?;
+            Ok(serde_json::json!({
+                "type":row.kind,"culture":row.culture,"religion":row.religion,
+                "size_people":d::people(&size),"has_fractional_people":!d::is_whole_people(&size)
+            }))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(serde_json::json!(converted))
+}
 pub fn reports(game: &Game, project: &Project) -> Result<BTreeMap<String, String>> {
     let values = changes(game, project)?;
-    let mut markdown=String::from("# Confirmed population changes\n\nAll values use EU5 source size units. Drafts are excluded.\n\n| Location | Country | Original | Working | Delta | Change % |\n|---|---|---:|---:|---:|---:|\n");
-    let mut csv = String::from("location,state,type,culture,religion,size\r\n");
+    let mut markdown=String::from("# Confirmed population changes\n\nPopulation values are people, converted exactly from EU5 source units (1 source unit = 1,000 people). Any existing fractional-person values are retained without rounding. Drafts are excluded.\n\n| Location | Country | Original people | Working people | Delta people | Change % |\n|---|---|---:|---:|---:|---:|\n");
+    let mut demographic_rows = String::from("\n## Demographic rows\n\n| Location | State | Type | Culture | Religion | People |\n|---|---|---|---|---|---:|\n");
+    let mut csv = String::from("location,state,type,culture,religion,size_people,has_fractional_people\r\n");
     for r in values.as_array().unwrap() {
         let key = r["key"].as_str().unwrap();
         markdown.push_str(&format!(
             "| {} | {} | {} | {} | {} | {} |\n",
             key,
             r["country"],
-            r["original_total"],
-            r["working_total"],
-            r["delta"],
-            r["percentage_delta"]
+            r["original_total_people"].as_str().unwrap(),
+            r["working_total_people"].as_str().unwrap(),
+            r["delta_people"].as_str().unwrap(),
+            r["percentage_delta"].as_str().unwrap_or("—")
         ));
         for state in ["original", "working"] {
-            for row in r[state].as_array().unwrap() {
+            for row in r[format!("{state}_people")].as_array().unwrap() {
                 let fields = [
                     key,
                     state,
                     row["type"].as_str().unwrap(),
                     row["culture"].as_str().unwrap(),
                     row["religion"].as_str().unwrap(),
-                    row["size"].as_str().unwrap(),
+                    row["size_people"].as_str().unwrap(),
+                    if row["has_fractional_people"] == true { "true" } else { "false" },
                 ];
+                demographic_rows.push_str(&format!(
+                    "| {} | {} | {} | {} | {} | {} |\n",
+                    fields[0], fields[1], fields[2], fields[3], fields[4], fields[5]
+                ));
                 csv.push_str(
                     &fields
                         .iter()
@@ -147,10 +174,7 @@ pub fn reports(game: &Game, project: &Project) -> Result<BTreeMap<String, String
             }
         }
     }
-    markdown.push_str(&format!(
-        "\n## Exact demographic rows\n\n```json\n{}\n```\n",
-        serde_json::to_string_pretty(&values)?
-    ));
+    markdown.push_str(&demographic_rows);
     Ok(BTreeMap::from([
         (
             "changes.json".into(),

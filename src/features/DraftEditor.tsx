@@ -1,5 +1,6 @@
 import type { Location, Status, Params } from "../types/api";
 import { percent, add, difference } from "../state/comparison";
+import { formatPeople, hasFractionalPeople, peopleToGame } from "../state/population-units";
 export interface DraftForm {
   kind: "exact" | "scale" | "add" | "remove" | "rebalance";
   tuple: string;
@@ -33,21 +34,32 @@ export const defaultForm = (loc: Location, status: Status): DraftForm => ({
 export function operation(f: DraftForm): Params {
   switch (f.kind) {
     case "exact":
-      return { kind: f.kind, tuple: f.tuple, mode: f.mode, value: f.value };
+      return {
+        kind: f.kind,
+        tuple: f.tuple,
+        mode: f.mode,
+        value: f.mode === "set" || f.mode === "add"
+          ? peopleToGame(f.value, f.mode === "add") : f.value,
+      };
     case "remove":
       return { kind: f.kind, tuple: f.tuple };
     case "scale":
-      return { kind: f.kind, mode: f.mode, value: f.value };
+      return {
+        kind: f.kind,
+        mode: f.mode,
+        value: f.mode === "set" || f.mode === "add"
+          ? peopleToGame(f.value, f.mode === "add") : f.value,
+      };
     case "add":
       return {
         kind: f.kind,
         type: f.type,
         culture: f.culture,
         religion: f.religion,
-        size: f.value,
+        size: peopleToGame(f.value),
       };
     case "rebalance": {
-      const weights: Record<string, string> = {};
+      const weights: Record<string, string> = Object.create(null);
       for (const line of f.weights.split("\n").filter((l) => l.trim())) {
         const m = line
           .trim()
@@ -90,6 +102,8 @@ export function DraftEditor({
     /* invalid input remains visible */
   }
   const total = Object.values(ratios).reduce(add, "0");
+  const fractionalWorking = location.working_fractional_people ||
+    Object.values(location.working).some((row) => hasFractionalPeople(row.size));
   return (
     <section className="draft-editor">
       <fieldset disabled={busy}>
@@ -103,6 +117,17 @@ export function DraftEditor({
           Changes stay pending until Apply. Save and Export use confirmed
           Working values.
         </p>
+        <p className="hint">
+          Enter whole people for population counts. Percentages and multipliers
+          may use decimals; new results round to the nearest person.
+        </p>
+        {fractionalWorking && (
+          <p className="hint">
+            Working source rows contain fractional people, retained exactly.
+            To use a whole-person total, choose Scale Population and Set exact
+            value before rebalancing. Exact group edits can set a whole-person count.
+          </p>
+        )}
         <label>
           Operation
           <select
@@ -127,7 +152,7 @@ export function DraftEditor({
             >
               {Object.entries(location.working).map(([k, r]) => (
                 <option key={k} value={k}>
-                  {r.religion} · {r.culture} · {r.type} ({r.size})
+                  {r.religion} · {r.culture} · {r.type} ({formatPeople(r.size)} people)
                 </option>
               ))}
             </select>
@@ -152,10 +177,12 @@ export function DraftEditor({
                 ? "Percent (negative decreases)"
                 : form.mode === "multiply"
                   ? "Multiplier"
-                  : "Value"}
+                  : form.mode === "add"
+                    ? "People to add / subtract"
+                    : "People"}
               <input
                 aria-label="Draft value"
-                inputMode="decimal"
+                inputMode={form.mode === "percent" || form.mode === "multiply" ? "decimal" : "numeric"}
                 value={form.value}
                 onChange={(e) => change({ value: e.target.value })}
               />
@@ -181,9 +208,9 @@ export function DraftEditor({
               </label>
             ))}
             <label>
-              Size
+              Size (people)
               <input
-                inputMode="decimal"
+                inputMode="numeric"
                 value={form.value}
                 onChange={(e) => change({ value: e.target.value })}
               />
@@ -246,18 +273,18 @@ export function DraftEditor({
         {location.draft && (
           <div className="draft-preview" aria-live="polite">
             <div>
-              Original <strong>{location.original_total}</strong>
+              Original <strong>{formatPeople(location.original_total)}</strong>
             </div>
             <div>
-              Working <strong>{location.working_total}</strong>
+              Working <strong>{formatPeople(location.working_total)}</strong>
             </div>
             <div>
-              Draft total <strong>{location.draft_total}</strong>
+              Draft total <strong>{formatPeople(location.draft_total!)}</strong>
             </div>
             <div>
               Δ vs Working{" "}
               <strong>
-                {difference(location.draft_total!, location.working_total)}
+                {formatPeople(difference(location.draft_total!, location.working_total))}
               </strong>
             </div>
             {!form.reviewed && (

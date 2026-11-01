@@ -97,10 +97,10 @@ fn exact_tuple_changes_no_other_rows_and_preserves_unknown() {
     let op = editing::Operation::Exact {
         tuple: "peasants|amber|sun".into(),
         mode: "set".into(),
-        value: "12.345678".into(),
+        value: "12.345".into(),
     };
     let after = editing::preview(before, &op, &g.defs).unwrap();
-    assert_eq!(after[0].size, "12.345678");
+    assert_eq!(after[0].size, "12.345");
     assert_eq!(&before[1..], &after[1..]);
     assert_eq!(before[0].unknown().unwrap(), after[0].unknown().unwrap());
     assert!(after[0].rendered().unwrap().contains("future = {"));
@@ -183,12 +183,12 @@ fn scale_add_remove_groups() {
         rows,
         &editing::Operation::Scale {
             mode: "set".into(),
-            value: "123.4567".into(),
+            value: "123.457".into(),
         },
         &g.defs,
     )
     .unwrap();
-    assert_eq!(p::total(&scaled).unwrap(), d::parse("123.4567").unwrap());
+    assert_eq!(p::total(&scaled).unwrap(), d::parse("123.457").unwrap());
     let added = editing::preview(
         rows,
         &editing::Operation::Add {

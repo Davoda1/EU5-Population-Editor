@@ -56,7 +56,8 @@ export function summary(
   rows: Record<string, Row>,
   axis: "culture" | "religion" | "type",
 ) {
-  const out: Record<string, string> = {};
+  // Definition IDs can legally be names such as "constructor" or "__proto__".
+  const out: Record<string, string> = Object.create(null);
   for (const row of Object.values(rows))
     out[row[axis]] = add(out[row[axis]] || "0", row.size);
   return out;

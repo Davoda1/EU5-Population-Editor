@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.3
+
+- Display population counts, totals and differences as people, with exact conversion to the existing EU5 source units.
+- Require whole-person absolute inputs and allocate newly calculated edit results to indivisible people. Decimal percentages, multipliers and ratio weights retain their meanings.
+- Preserve existing fractional-person source/project data exactly until explicitly edited, with visible precision notices and safe rebalance validation.
+- Restore zero-sized groups through standard rebalancing while retaining their demographic identities and extra fields.
+- Block migration commit while typed or reviewed Draft edits are pending.
+- Bundle a matching offline manual with local search, theme support and a separate application window. Keep the hosted manual available as an explicit online action.
+- Follow the application's Appearance setting in the embedded manual, including previews and cancellation; keep the hosted manual's independent theme selector.
+- Add version/hash verification and editable documentation source to the frozen manual snapshot, with no Python or documentation download required for ordinary application builds.
+- Use people in human-readable reports while retaining raw game-unit fields and adding exact people projections in JSON reports.
+- Retain explicit whole-person normalization even when duplicate demographic rows keep the same combined total, including through saving, imports and migration.
+- Prevent stale navigation replies and overlapping edits from replacing newer Draft results; keep migration review locked while an action completes.
+- Preserve the selected country when restoring a saved location and support valid identifiers that match JavaScript object property names.
+- Support the bundled manual's Copy code buttons without allowing clipboard reads, and preserve manual snapshot hashes across Windows and Linux checkouts.
+- Clarify the distinct Add Population Group and Rebalance ratios workflows in the manual.
+- Retain project format 1, Node.js 26.13.0, npm 11.20.0 and Electron 45.2.1.
+
 ## 1.0.2
 
 - Updated the build toolchain to Node.js 26.13.0 LTS and the desktop runtime to Electron 45.2.1 stable.

@@ -107,6 +107,18 @@ impl Session {
             .get(key)
             .map(|c| c.baseline.as_slice())
             .unwrap_or(&loc.pops);
+        let fractional_people = |rows: &[Pop]| -> Result<bool> {
+            for row in rows {
+                if !d::is_whole_people(&d::nonnegative(&row.size)?) {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        };
+        let original_fractional_people = fractional_people(original)?;
+        let working_fractional_people = fractional_people(working)?;
+        let draft_fractional_people = draft.map(|(_, rows)| fractional_people(rows))
+            .transpose()?.unwrap_or(false);
         let rows = |ps: &[Pop]| -> Result<Value> {
             let mut result: BTreeMap<String, Value> = BTreeMap::new();
             let mut sizes: BTreeMap<String, d::Q> = BTreeMap::new();
@@ -125,7 +137,7 @@ impl Session {
             Ok(json!(result))
         };
         Ok(
-            json!({"key":key,"name":g.names.get(key).unwrap_or(&key.to_owned()),"owners":g.owners.get(key),"original":rows(original)?,"working":rows(working)?,"draft":draft.map(|(_,r)|rows(r)).transpose()?,"original_total":d::format(&p::total(original)?,28),"working_total":d::format(&p::total(working)?,28),"draft_total":draft.map(|(_,r)|p::total(r).map(|t|d::format(&t,28))).transpose()?,"draft_token":draft.map(|(token,_)|token),"region":self.map.as_ref().and_then(|m|m.region(key)),"map_dimensions":self.map.as_ref().map(|m|[m.index.width,m.index.height])}),
+            json!({"key":key,"name":g.names.get(key).unwrap_or(&key.to_owned()),"owners":g.owners.get(key),"original":rows(original)?,"working":rows(working)?,"draft":draft.map(|(_,r)|rows(r)).transpose()?,"original_total":d::format(&p::total(original)?,28),"working_total":d::format(&p::total(working)?,28),"draft_total":draft.map(|(_,r)|p::total(r).map(|t|d::format(&t,28))).transpose()?,"draft_token":draft.map(|(token,_)|token),"original_fractional_people":original_fractional_people,"working_fractional_people":working_fractional_people,"draft_fractional_people":draft_fractional_people,"region":self.map.as_ref().and_then(|m|m.region(key)),"map_dimensions":self.map.as_ref().map(|m|[m.index.width,m.index.height])}),
         )
     }
     pub fn request(
@@ -409,7 +421,7 @@ impl Session {
                 let text = if s(&args, "format")? == "md" {
                     migration::markdown(plan)
                 } else {
-                    serde_json::to_string_pretty(plan)?
+                    serde_json::to_string_pretty(&migration::report_json(plan)?)?
                 };
                 project::atomic(path, text.as_bytes())?;
                 Ok(json!(true))

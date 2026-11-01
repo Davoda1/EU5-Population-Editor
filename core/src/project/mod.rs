@@ -83,7 +83,7 @@ impl Project {
             g.defs.validate(row)?;
             row.rendered()?;
         }
-        if p::canonical(&rows)? == p::canonical(&loc.pops)? {
+        if p::equivalent(&rows, &loc.pops)? {
             self.changes.remove(key);
         } else {
             self.changes.insert(
@@ -202,7 +202,7 @@ pub fn legacy(g: &Game, path: &Path) -> Result<ImportPlan> {
                     .all(|p| p.unknown().is_ok_and(|s| s.is_empty())),
                 "Legacy import cannot preserve unknown fields here; manual review required"
             );
-            if p::canonical(&pops)? == p::canonical(&loc.pops)? {
+            if p::equivalent(&pops, &loc.pops)? {
                 return Ok(());
             }
             project.set(g, key, pops)
@@ -248,7 +248,7 @@ pub fn import_mod(g: &Game, path: &Path) -> Result<ImportPlan> {
                 .get(&key)
                 .context("Mod introduces a location absent from old vanilla")?;
             ensure!(baseline.nonpop==loc.nonpop,"Mod changes non-population location fields; demographic importer cannot safely import those changes");
-            if p::canonical(&baseline.pops)? == p::canonical(&loc.pops)? {
+            if p::equivalent(&baseline.pops, &loc.pops)? {
                 return Ok(());
             }
             project.set(g, &key, loc.pops.clone())

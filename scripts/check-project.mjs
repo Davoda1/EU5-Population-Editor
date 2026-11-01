@@ -36,3 +36,6 @@ async function inspect(dir) {
 }
 await inspect(".");
 console.log(`Public source checks passed: version ${pkg.version}, AGPLv3, ${count} text files.`);
+
+const { checkManual } = await import("./check-manual.mjs");
+await checkManual();

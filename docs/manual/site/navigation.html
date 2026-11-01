@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-edition="offline">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Countries, locations and maps · EU5 Population Editor</title>
+<meta name="description" content="Use the country and location panels to find a population record. The map provides a visual alternative when compatible map data is available. Countries and.">
+<meta name="color-scheme" content="light dark">
+<meta name="eu5-manual-version" content="1.0.3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/manual.css?v=1.0.3">
+<script src="assets/theme.js?v=1.0.3"></script>
+<script src="assets/search-index.js?v=1.0.3" defer></script><script src="assets/manual.js?v=1.0.3" defer></script>
+</head>
+<body data-page="navigation" data-version="1.0.3" data-edition="offline">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="index.html" aria-label="EU5 Population Editor manual home"><img src="assets/favicon.svg" width="30" height="30" alt=""><span>EU5 Population Editor</span></a>
+  <span class="header-divider" aria-hidden="true"></span><span class="site-label">Manual</span>
+  <nav class="header-links" aria-label="Project"><a href="https://github.com/Davoda1/EU5-Population-Editor/releases" aria-label="Download EU5 Population Editor 1.0.3">Downloads <span aria-hidden="true">↗</span></a><a href="https://github.com/Davoda1/EU5-Population-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <button class="icon-button mobile-search search-trigger" aria-label="Search manual"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+
+ </div>
+</header>
+<div class="manual-layout">
+ <aside class="sidebar" aria-label="Manual navigation">
+  <button class="search-trigger search-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Search manual</span><kbd>/</kbd></button>
+  <nav aria-label="Chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html" aria-current="page">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav>
+  <div class="sidebar-meta"><span class="version-label">Version 1.0.3</span><span>Bundled offline manual</span><span>Windows &amp; Linux</span></div>
+ </aside>
+ <div class="mobile-navigation"><details><summary>Browse manual <span>Browse the world</span></summary><nav aria-label="Mobile chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html" aria-current="page">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav></details></div>
+ <main id="main" tabindex="-1">
+  <div class="breadcrumb"><a href="index.html">Manual</a><span aria-hidden="true">/</span><span>Editing population</span></div>
+  <article><header class="article-header"><p class="edition">EU5 Population Editor 1.0.3</p><h1>Countries, locations and maps</h1></header><p class="lead">Use the country and location panels to find a population record. The map provides a visual alternative when compatible map data is available.</p>
+<h2 id="countries-and-locations">Countries and locations</h2>
+<p>Countries are sorted by displayed name, with tags retained for identification. Search accepts either a name or a tag. When a readable country name is unavailable, the game identifier remains available.</p>
+<p>The location list can be searched by name or key. Its filters help focus on modified or problematic records; pagination keeps large worlds manageable. Changing the selection does not apply a draft. Typed forms remain associated with their own location during navigation.</p>
+<h2 id="population-comparisons">Population comparisons</h2>
+<p>The comparison table joins groups from the available states, including groups added or removed by an edit. Review the location total as well as individual rows. Demographic filters change what you inspect; they do not themselves modify the population.</p>
+<p>Original is the currently loaded source baseline. Working reflects confirmed changes. Draft shows a reviewed pending proposal when one exists.</p>
+<h2 id="index-the-map">Index the map</h2>
+<p>Choose <strong>Index map</strong> when compatible map files are present. The first pass reads the location raster and builds a cache. Progress appears while indexing runs. Later selections reuse the index instead of scanning the whole world again.</p>
+<p>The map supports dragging, scrolling, zoom buttons, arrow-key navigation when focused, and <strong>Center</strong>. Clicking an editable location selects its record. The selected location is highlighted.</p>
+<h2 id="map-colors-and-editable-locations">Map colors and editable locations</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Appearance</th>
+<th>Population editing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ordinary land</td>
+<td>Country color; selected location highlighted</td>
+<td>Available where the location data supports it</td>
+</tr>
+<tr>
+<td>Water, including seas and lakes</td>
+<td>Blue</td>
+<td>Not editable</td>
+</tr>
+<tr>
+<td>Corridors and impassable land</td>
+<td>Dark grey</td>
+<td>Not editable</td>
+</tr>
+</tbody>
+</table></div>
+<p>These classifications come from the loaded game definitions. Water takes precedence if a region also carries a corridor or impassable classification.</p>
+<p>You can still drag and zoom over noneditable regions, and their location borders remain visible. Clicking water, a corridor or impassable land does not select it as a population-editing target.</p>
+<p>An ordinary land location is not blocked just because it is unowned or has no current population. The geographic classification determines these restrictions, rather than the absence of an owner or a zero population total.</p>
+<figure class="theme-screenshot">
+<img class="screenshot-light" src="assets/map-light.png?v=1.0.3" alt="EU5 Population Editor 1.0.3 displaying an indexed illustrative map with a fictional location selected." loading="lazy" width="1600" height="1000">
+<img class="screenshot-dark" src="assets/map-dark.png?v=1.0.3" alt="EU5 Population Editor 1.0.3 displaying an indexed illustrative map with a fictional location selected." loading="lazy" width="1600" height="1000">
+<figcaption>The actual editor's map panel using synthetic demonstration data and an illustrative map. The selected fictional location is highlighted. <a class="fullsize-light" href="assets/map-light.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a><a class="fullsize-dark" href="assets/map-dark.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a></figcaption>
+</figure>
+
+<figure class="theme-screenshot">
+<img class="screenshot-light" src="assets/map-secondary-light.png?v=1.0.3" alt="A second fictional location selected on the editor's illustrative demonstration map." loading="lazy" width="1600" height="1000">
+<img class="screenshot-dark" src="assets/map-secondary-dark.png?v=1.0.3" alt="A second fictional location selected on the editor's illustrative demonstration map." loading="lazy" width="1600" height="1000">
+<figcaption>A second selection in the same synthetic demonstration world. These screenshots illustrate navigation and highlighting; your installed game provides the real geography during normal use. <a class="fullsize-light" href="assets/map-secondary-light.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a><a class="fullsize-dark" href="assets/map-secondary-dark.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a></figcaption>
+</figure>
+
+<h2 id="map-limitations">Map limitations</h2>
+<p>Missing or unsupported map resources can disable the map without preventing population editing. Shared or ambiguous RGB identifiers are reported rather than resolved by guesswork. Country colors can use deterministic fallback colors where reliable game colors are unavailable.</p>
+<p>The cache is stored in the editor's user-data directory and is keyed to the map and definitions. Game files are not modified. See <a href="settings.html">Settings and shortcuts</a> for the directory path.</p></article>
+  <nav class="page-navigation" aria-label="Adjacent chapters"><a class="previous" href="first-project.html"><span>Previous</span><strong>Your first project </strong></a><a class="next" href="editing.html"><span>Next</span><strong>Draft and Apply →</strong></a></nav>
+   <footer class="article-footer"><span>EU5 Population Editor documentation · © 2026 davoda1</span><a href="https://davoda1.github.io/EU5-Population-Editor-Manual/">Latest online manual <span aria-hidden="true">↗</span></a><a href="LICENSE.txt">AGPLv3</a></footer>
+ </main>
+ <aside class="page-outline" aria-label="On this page"><div><p>On this page</p><ul><li><a href="#countries-and-locations">Countries and locations</a></li><li><a href="#population-comparisons">Population comparisons</a></li><li><a href="#index-the-map">Index the map</a></li><li><a href="#map-colors-and-editable-locations">Map colors and editable locations</a></li><li><a href="#map-limitations">Map limitations</a></li></ul><a class="help-link" href="troubleshooting.html">Need help?</a><a class="outline-source" href="https://github.com/Davoda1/EU5-Population-Editor/issues">Report an issue ↗</a></div></aside>
+</div>
+<dialog id="search-dialog" aria-labelledby="search-title">
+ <div class="search-heading"><h2 id="search-title">Search the manual</h2><button class="dialog-close" aria-label="Close search">Esc</button></div>
+ <div class="search-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search-input" type="search" placeholder="Search topics, settings, shortcuts…" autocomplete="off" aria-label="Search manual pages" aria-controls="search-results"></div>
+ <p id="search-status" aria-live="polite">Type a topic to find a page.</p><ul id="search-results"></ul>
+ <div class="search-footer">Search runs in your browser. No queries are sent.</div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>

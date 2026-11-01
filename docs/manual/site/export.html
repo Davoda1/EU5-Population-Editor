@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en" data-edition="offline">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Export a population mod · EU5 Population Editor</title>
+<meta name="description" content="Export Mod creates a separate mod from confirmed Working changes. Exporting does not change the original installation or enable the mod in the game launcher..">
+<meta name="color-scheme" content="light dark">
+<meta name="eu5-manual-version" content="1.0.3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/manual.css?v=1.0.3">
+<script src="assets/theme.js?v=1.0.3"></script>
+<script src="assets/search-index.js?v=1.0.3" defer></script><script src="assets/manual.js?v=1.0.3" defer></script>
+</head>
+<body data-page="export" data-version="1.0.3" data-edition="offline">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="index.html" aria-label="EU5 Population Editor manual home"><img src="assets/favicon.svg" width="30" height="30" alt=""><span>EU5 Population Editor</span></a>
+  <span class="header-divider" aria-hidden="true"></span><span class="site-label">Manual</span>
+  <nav class="header-links" aria-label="Project"><a href="https://github.com/Davoda1/EU5-Population-Editor/releases" aria-label="Download EU5 Population Editor 1.0.3">Downloads <span aria-hidden="true">↗</span></a><a href="https://github.com/Davoda1/EU5-Population-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <button class="icon-button mobile-search search-trigger" aria-label="Search manual"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+
+ </div>
+</header>
+<div class="manual-layout">
+ <aside class="sidebar" aria-label="Manual navigation">
+  <button class="search-trigger search-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Search manual</span><kbd>/</kbd></button>
+  <nav aria-label="Chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html" aria-current="page">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav>
+  <div class="sidebar-meta"><span class="version-label">Version 1.0.3</span><span>Bundled offline manual</span><span>Windows &amp; Linux</span></div>
+ </aside>
+ <div class="mobile-navigation"><details><summary>Browse manual <span>Export a mod</span></summary><nav aria-label="Mobile chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html" aria-current="page">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav></details></div>
+ <main id="main" tabindex="-1">
+  <div class="breadcrumb"><a href="index.html">Manual</a><span aria-hidden="true">/</span><span>Editing population</span></div>
+  <article><header class="article-header"><p class="edition">EU5 Population Editor 1.0.3</p><h1>Export a population mod</h1></header><p class="lead">Export Mod creates a separate mod from confirmed Working changes. Exporting does not change the original installation or enable the mod in the game launcher.</p>
+<h2 id="before-exporting">Before exporting</h2>
+<p>Apply all drafts you intend to include, save your project, and choose <strong>Validate</strong>. Read any issues and resolve problems that block compatibility or export. Select a destination outside the game installation.</p>
+<h2 id="export-fields">Export fields</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What to enter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>A readable title for your mod</td>
+</tr>
+<tr>
+<td>ID</td>
+<td>A stable lowercase, folder-safe identifier</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>Your mod's own version, such as <code>1.0.0</code></td>
+</tr>
+<tr>
+<td>Supported EU5 version</td>
+<td>The saved manual version for the loaded installation; change it through <strong>Game settings</strong></td>
+</tr>
+<tr>
+<td>Optional ZIP</td>
+<td>Whether to also create a ZIP of the generated mod</td>
+</tr>
+</tbody>
+</table></div>
+<p>Compatibility with <strong>EU5 v1.4.5</strong> is confirmed, and the initial supported-game-version value is <strong>1.4.5</strong>. <strong>Supported EU5 version</strong> displays the saved value. Use <strong>Game settings</strong> to open Settings, select the loaded installation, edit <strong>Manual EU5 version</strong>, and choose <strong>Save settings</strong>. A leading <code>v</code> is accepted and normalized when saved. The setting is remembered per installation without requiring an export.</p>
+<p>This field is manual metadata. Changing it does not make incompatible game files compatible and does not replace a migration after an actual data change.</p>
+<h2 id="write-the-mod">Write the mod</h2>
+<p>With <strong>1.4.5</strong> selected, no unverified-version acknowledgment is required. If you select another game version, acknowledge that compatibility with that selected version has not been verified before exporting.</p>
+<p>Choose <strong>Choose output and export</strong> and select the destination. The editor stages the output, reparses the population data and verifies the result before completing the export.</p>
+<p>When <strong>Remember project and export folders</strong> is enabled in Settings, the output picker starts in the last export destination. That location is remembered separately from project folders.</p>
+<p>An existing export directory is not recursively overwritten. Choose a new destination or move an older export after verifying what it contains.</p>
+<h2 id="what-is-produced">What is produced</h2>
+<p>The output contains the changed population source files with unchanged location content retained, <code>.metadata/metadata.json</code>, change reports, and the optional ZIP. Source UTF-8 BOM and line endings are preserved where applicable. Legacy descriptor files are not generated.</p>
+<p>Change reports can also be exported individually as CSV, JSON or Markdown from the dialog.</p>
+<p>Human-readable population reports use person counts. JSON reports retain their raw source-unit values and include explicitly named person-count fields, so existing integrations can distinguish the two representations. The exported EU5 population files continue to use the game's thousand-person source units. Displaying people does not change the file format or round untouched source data.</p>
+<h2 id="use-the-exported-mod">Use the exported mod</h2>
+<p>Follow the mod-loading process supported by your installed game and launcher. EU5 v1.4.5 compatibility is confirmed. Keep a backup of your project; later game versions, changes to launcher conventions and interactions with other enabled mods require their own verification.</p>
+<p>Do not copy the generated population files over your vanilla installation. Keep exported output separate from the source files used for editing and migration.</p></article>
+  <nav class="page-navigation" aria-label="Adjacent chapters"><a class="previous" href="projects.html"><span>Previous</span><strong>Save and reopen </strong></a><a class="next" href="migration.html"><span>Next</span><strong>Upgrade a project →</strong></a></nav>
+   <footer class="article-footer"><span>EU5 Population Editor documentation · © 2026 davoda1</span><a href="https://davoda1.github.io/EU5-Population-Editor-Manual/">Latest online manual <span aria-hidden="true">↗</span></a><a href="LICENSE.txt">AGPLv3</a></footer>
+ </main>
+ <aside class="page-outline" aria-label="On this page"><div><p>On this page</p><ul><li><a href="#before-exporting">Before exporting</a></li><li><a href="#export-fields">Export fields</a></li><li><a href="#write-the-mod">Write the mod</a></li><li><a href="#what-is-produced">What is produced</a></li><li><a href="#use-the-exported-mod">Use the exported mod</a></li></ul><a class="help-link" href="troubleshooting.html">Need help?</a><a class="outline-source" href="https://github.com/Davoda1/EU5-Population-Editor/issues">Report an issue ↗</a></div></aside>
+</div>
+<dialog id="search-dialog" aria-labelledby="search-title">
+ <div class="search-heading"><h2 id="search-title">Search the manual</h2><button class="dialog-close" aria-label="Close search">Esc</button></div>
+ <div class="search-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search-input" type="search" placeholder="Search topics, settings, shortcuts…" autocomplete="off" aria-label="Search manual pages" aria-controls="search-results"></div>
+ <p id="search-status" aria-live="polite">Type a topic to find a page.</p><ul id="search-results"></ul>
+ <div class="search-footer">Search runs in your browser. No queries are sent.</div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>

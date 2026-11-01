@@ -1,6 +1,7 @@
 import { it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { DraftEditor, defaultForm } from "../src/features/DraftEditor";
+import { Demographics } from "../src/features/Demographics";
 import type { Status, Location } from "../src/types/api";
 afterEach(cleanup);
 const location: Location = {
@@ -35,7 +36,7 @@ it("typing changes Draft form without invoking Apply", () => {
     ...defaultForm(location, status),
     kind: "exact" as const,
     mode: "set",
-    value: "8",
+    value: "8000",
   };
   render(
     <DraftEditor
@@ -102,4 +103,11 @@ it("Discard is explicit and separate from Review and Apply", () => {
   expect(discard).toHaveBeenCalledOnce();
   expect(review).not.toHaveBeenCalled();
   expect(apply).not.toHaveBeenCalled();
+});
+
+it("warns about fractional raw rows even when the aggregated tuple is a whole count", () => {
+  const fractionalRows = { ...location, working_fractional_people: true };
+  render(<Demographics location={fractionalRows} onEdit={vi.fn()} />);
+  expect(screen.getByText(/Separate rows may contain fractions/)).toBeTruthy();
+  expect(screen.getAllByText("8,000").length).toBeGreaterThan(0);
 });

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-edition="offline">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Save and reopen projects · EU5 Population Editor</title>
+<meta name="description" content="A project records your confirmed population edits and the source information needed to detect incompatibilities. Saving a project is separate from exporting.">
+<meta name="color-scheme" content="light dark">
+<meta name="eu5-manual-version" content="1.0.3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/manual.css?v=1.0.3">
+<script src="assets/theme.js?v=1.0.3"></script>
+<script src="assets/search-index.js?v=1.0.3" defer></script><script src="assets/manual.js?v=1.0.3" defer></script>
+</head>
+<body data-page="projects" data-version="1.0.3" data-edition="offline">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="index.html" aria-label="EU5 Population Editor manual home"><img src="assets/favicon.svg" width="30" height="30" alt=""><span>EU5 Population Editor</span></a>
+  <span class="header-divider" aria-hidden="true"></span><span class="site-label">Manual</span>
+  <nav class="header-links" aria-label="Project"><a href="https://github.com/Davoda1/EU5-Population-Editor/releases" aria-label="Download EU5 Population Editor 1.0.3">Downloads <span aria-hidden="true">↗</span></a><a href="https://github.com/Davoda1/EU5-Population-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <button class="icon-button mobile-search search-trigger" aria-label="Search manual"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+
+ </div>
+</header>
+<div class="manual-layout">
+ <aside class="sidebar" aria-label="Manual navigation">
+  <button class="search-trigger search-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Search manual</span><kbd>/</kbd></button>
+  <nav aria-label="Chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html" aria-current="page">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav>
+  <div class="sidebar-meta"><span class="version-label">Version 1.0.3</span><span>Bundled offline manual</span><span>Windows &amp; Linux</span></div>
+ </aside>
+ <div class="mobile-navigation"><details><summary>Browse manual <span>Save and reopen</span></summary><nav aria-label="Mobile chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html" aria-current="page">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav></details></div>
+ <main id="main" tabindex="-1">
+  <div class="breadcrumb"><a href="index.html">Manual</a><span aria-hidden="true">/</span><span>Editing population</span></div>
+  <article><header class="article-header"><p class="edition">EU5 Population Editor 1.0.3</p><h1>Save and reopen projects</h1></header><p class="lead">A project records your confirmed population edits and the source information needed to detect incompatibilities. Saving a project is separate from exporting a mod.</p>
+<h2 id="save-and-save-as">Save and Save As</h2>
+<p><strong>Save</strong> writes the current project's confirmed Working state. <strong>Save As</strong> lets you choose another path and is useful for keeping checkpoints before larger edits.</p>
+<p>The native file extension is <code>.eu5popproj</code>. The file includes source fingerprints, baselines for modified locations and the information used during migration. It does not bundle a complete game installation.</p>
+<p>Pending drafts are excluded. Review and apply any draft you want to keep before saving. There is no autosave or crash-recovery system; save regularly.</p>
+<h2 id="reopen-a-project">Reopen a project</h2>
+<p>Load the intended <strong>Game Data</strong> first, then choose <strong>Open</strong> and select the project. The editor verifies the project's structure and checksum. If the installed source data differs from the recorded baseline, editing and export are blocked until the difference is resolved through migration.</p>
+<p>Do not manually edit the project JSON to bypass its checksum or source checks. Restore a known-good backup if the file is damaged.</p>
+<h2 id="new-projects-and-replacing-work">New projects and replacing work</h2>
+<p><strong>New Project</strong> starts a clean project against the loaded game data. Loading another project or replacing current work can discard unsaved changes and drafts. The application prompts when current work needs attention; save a checkpoint before proceeding.</p>
+<p>The editor uses a themed confirmation dialog when replacing unsaved work, exiting or restarting. <strong>Cancel</strong> keeps the current session open. <strong>Discard</strong> continues without saving. <strong>Save Working</strong> writes the confirmed changes before continuing; pending Draft edits are still excluded. If you want to keep a draft, cancel and Apply it first.</p>
+<figure class="theme-screenshot">
+<img class="screenshot-light" src="assets/confirmation-light.png?v=1.0.3" alt="Themed unsaved-work dialog with Cancel, Discard and continue, and Save Working and continue buttons." loading="lazy" width="1600" height="1000">
+<img class="screenshot-dark" src="assets/confirmation-dark.png?v=1.0.3" alt="Themed unsaved-work dialog with Cancel, Discard and continue, and Save Working and continue buttons." loading="lazy" width="1600" height="1000">
+<figcaption>The 1.0.3 unsaved-work dialog, shown with synthetic demonstration data, distinguishes confirmed Working changes from pending Draft edits. <a class="fullsize-light" href="assets/confirmation-light.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a><a class="fullsize-dark" href="assets/confirmation-dark.png?v=1.0.3" target="_blank" rel="noopener">Open full-size screenshot ↗</a></figcaption>
+</figure>
+
+<h2 id="file-compatibility">File compatibility</h2>
+<p>The public application's version number and the project format version are separate. Version 1.0.3 uses native project format 1. A project remains subject to schema, checksum and game-source checks regardless of the application version recorded in it. Project sizes remain in EU5 source units; the person-count interface does not reinterpret existing saved values or discard fractional precision.</p>
+<p>See <a href="import.html">Import existing population edits</a> for supported older JSON projects and mod population files. See <a href="migration.html">Migrate after a game update</a> when the game data has changed.</p></article>
+  <nav class="page-navigation" aria-label="Adjacent chapters"><a class="previous" href="ratios.html"><span>Previous</span><strong>Ratios and totals </strong></a><a class="next" href="export.html"><span>Next</span><strong>Export a mod →</strong></a></nav>
+   <footer class="article-footer"><span>EU5 Population Editor documentation · © 2026 davoda1</span><a href="https://davoda1.github.io/EU5-Population-Editor-Manual/">Latest online manual <span aria-hidden="true">↗</span></a><a href="LICENSE.txt">AGPLv3</a></footer>
+ </main>
+ <aside class="page-outline" aria-label="On this page"><div><p>On this page</p><ul><li><a href="#save-and-save-as">Save and Save As</a></li><li><a href="#reopen-a-project">Reopen a project</a></li><li><a href="#new-projects-and-replacing-work">New projects and replacing work</a></li><li><a href="#file-compatibility">File compatibility</a></li></ul><a class="help-link" href="troubleshooting.html">Need help?</a><a class="outline-source" href="https://github.com/Davoda1/EU5-Population-Editor/issues">Report an issue ↗</a></div></aside>
+</div>
+<dialog id="search-dialog" aria-labelledby="search-title">
+ <div class="search-heading"><h2 id="search-title">Search the manual</h2><button class="dialog-close" aria-label="Close search">Esc</button></div>
+ <div class="search-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search-input" type="search" placeholder="Search topics, settings, shortcuts…" autocomplete="off" aria-label="Search manual pages" aria-controls="search-results"></div>
+ <p id="search-status" aria-live="polite">Type a topic to find a page.</p><ul id="search-results"></ul>
+ <div class="search-footer">Search runs in your browser. No queries are sent.</div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>

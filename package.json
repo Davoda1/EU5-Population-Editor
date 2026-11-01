@@ -1,6 +1,6 @@
 {
   "name": "eu5-population-editor",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "license": "AGPL-3.0-only",
   "description": "Unofficial offline Europa Universalis V population and demographics editor",
@@ -8,12 +8,12 @@
   "homepage": "https://davoda1.github.io/EU5-Population-Editor-Manual/",
   "main": "build/electron/main.cjs",
   "scripts": {
-    "build:ui": "tsc --noEmit && vite build && node scripts/compile-electron.mjs",
+    "build:ui": "node scripts/check-manual.mjs && tsc --noEmit && vite build && node scripts/compile-electron.mjs",
     "test:ui": "vitest run",
     "package:linux": "electron-builder --linux --x64 --publish never",
     "package:windows": "electron-builder --win zip --x64 --publish never",
     "test:browser": "playwright test",
-    "test:desktop": "node tests/desktop/workflow.mjs && node tests/desktop/confirmations.mjs && node tests/desktop/settings.mjs"
+    "test:desktop": "node tests/desktop/workflow.mjs && node tests/desktop/confirmations.mjs && node tests/desktop/settings.mjs && node tests/desktop/manual.mjs"
   },
   "dependencies": {
     "react": "19.1.1",

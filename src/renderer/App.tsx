@@ -27,6 +27,7 @@ import {
 import { MapPanel } from "../features/MapPanel";
 import { MigrationDialog } from "../features/MigrationDialog";
 import { difference, percent } from "../state/comparison";
+import { formatPeople, gameToPeople } from "../state/population-units";
 export function App() {
   const [status, setStatus] = useState<Status | null>(null),
     [location, setLocation] = useState<Location | null>(null),
@@ -94,6 +95,8 @@ export function App() {
   };
   const run = async (label: string, fn: () => Promise<void>) => {
     if (busy) return;
+    // An earlier navigation response must not replace a newer mutation result.
+    ++locationTicket.current;
     setBusy(label);
     setError("");
     try {
@@ -105,25 +108,26 @@ export function App() {
       setProgress(null);
     }
   };
-  const select = async (key: string) => {
+  const select = async (key: string, selectedCountry = country) => {
     const ticket = ++locationTicket.current;
     try {
       const l = await call<Location>("location", { key });
       if (ticket !== locationTicket.current) return;
       setLocation(l);
-      await call("select", { country, location: key });
+      await call("select", { country: selectedCountry, location: key });
     } catch (e) {
-      failed(e);
+      if (ticket === locationTicket.current) failed(e);
     }
   };
   const resetView = (s: Status) => {
+    ++locationTicket.current;
     setStatus(s);
     setLocation(null);
     setForms({});
     setCountry(s.selected_country || "");
     setSearch("");
     setOffset(0);
-    if (s.selected_location) void select(s.selected_location);
+    if (s.selected_location) void select(s.selected_location, s.selected_country || "");
   };
   useEffect(() => {
     const unsubscribe = window.eu5.onEvent((event) => {
@@ -239,7 +243,8 @@ export function App() {
         setValidation(await call("validate"));
       }
     });
-  const form = location ? forms[location.key] : undefined;
+  const formFor = (key: string) => Object.hasOwn(forms, key) ? forms[key] : undefined;
+  const form = location ? formFor(location.key) : undefined;
   const setForm = (f: DraftForm) => {
     if (location) {
       // Notify main immediately, before a rapid native-window close can arrive.
@@ -254,14 +259,14 @@ export function App() {
       return copy;
     });
   const edit = (tuple?: string, kind?: DraftForm["kind"]) => {
-    if (location && status) {
-      const f = forms[location.key] || defaultForm(location, status);
+    if (location && status?.compatible && !busy) {
+      const f = formFor(location.key) || defaultForm(location, status);
       setForm({
         ...f,
         kind: kind || "exact",
         tuple: tuple || f.tuple,
         mode: tuple ? "set" : f.mode,
-        value: tuple ? location.working[tuple].size : f.value,
+        value: tuple ? gameToPeople(location.working[tuple].size) : f.value,
         reviewed: false,
       });
     }
@@ -507,7 +512,7 @@ export function App() {
                   <span>{l.name}</span>
                   <small>{l.key}</small>
                   <i>
-                    {l.draft || forms[l.key]
+                    {l.draft || formFor(l.key)
                       ? "Draft"
                       : l.modified
                         ? "Edited"
@@ -574,7 +579,7 @@ export function App() {
                       {status.map_indexed ? "Refresh map index" : "Index map"}
                     </button>
                     <button
-                      disabled={!status.compatible}
+                      disabled={!status.compatible || !!busy}
                       onClick={() => edit(undefined, "add")}
                     >
                       Add Population Group
@@ -583,24 +588,24 @@ export function App() {
                 </section>
                 <div className="totals">
                   <div>
-                    <span>Original vanilla</span>
-                    <strong>{location.original_total}</strong>
+                    <span>Original vanilla · people</span>
+                    <strong>{formatPeople(location.original_total)}</strong>
                   </div>
                   <div>
-                    <span>Confirmed Working</span>
-                    <strong>{location.working_total}</strong>
+                    <span>Confirmed Working · people</span>
+                    <strong>{formatPeople(location.working_total)}</strong>
                   </div>
                   <div className="draft-total">
-                    <span>Pending Draft</span>
-                    <strong>{location.draft_total ?? "—"}</strong>
+                    <span>Pending Draft · people</span>
+                    <strong>{location.draft_total === null ? "—" : formatPeople(location.draft_total)}</strong>
                   </div>
                   <div>
                     <span>Working Δ / %</span>
                     <strong>
-                      {difference(
+                      {formatPeople(difference(
                         location.working_total,
                         location.original_total,
-                      )}{" "}
+                      ))}{" "}
                       <small>
                         {percent(
                           difference(
@@ -615,19 +620,19 @@ export function App() {
                 </div>
                 <div className="edit-buttons">
                   <button
-                    disabled={!status.compatible}
+                    disabled={!status.compatible || !!busy}
                     onClick={() => edit(undefined, "rebalance")}
                   >
                     Rebalance ratios
                   </button>
                   <button
-                    disabled={!status.compatible}
+                    disabled={!status.compatible || !!busy}
                     onClick={() => edit(undefined, "scale")}
                   >
                     Scale Population
                   </button>
                   <button
-                    disabled={!status.compatible}
+                    disabled={!status.compatible || !!busy}
                     onClick={() => edit(undefined, "remove")}
                   >
                     Remove group
@@ -640,6 +645,7 @@ export function App() {
                   <section className="demographics-card">
                     <Demographics
                       location={location}
+                      editDisabled={!status.compatible || !!busy}
                       onEdit={(tuple) => edit(tuple)}
                     />
                   </section>
@@ -820,10 +826,13 @@ export function App() {
           </p>
           <p>
             Ctrl+S saves. Ctrl+Shift+S opens Save As. Ctrl+O opens a project.
-            All numeric values use the game source's size units.
+            Population counts use people. Enter whole people for absolute edits;
+            the editor converts exactly to EU5 source units when exporting a mod.
+            Existing fractional source values remain visible without rounding.
           </p>
           <div className="dialog-actions">
             <button onClick={() => void window.eu5.openLink("manual").catch(failed)}>Manual</button>
+            <button onClick={() => void window.eu5.openLink("online-manual").catch(failed)}>Online manual</button>
             <button onClick={() => void window.eu5.openLink("repository").catch(failed)}>Source code</button>
             <button onClick={() => void window.eu5.openLink("issues").catch(failed)}>Report an issue</button>
           </div>
@@ -946,6 +955,7 @@ export function App() {
       {plan && (
         <MigrationDialog
           plan={plan}
+          hasPendingDrafts={Object.keys(forms).length > 0 || !!status?.drafts}
           onPlan={setPlan}
           onClose={() => setPlan(null)}
           call={call}
@@ -974,7 +984,8 @@ export function App() {
           ))}
           {Object.keys(legacy.unresolved).length > 0 && (
             <details>
-              <summary>Unresolved data (retained)</summary>
+              <summary>Unresolved source data (retained)</summary>
+              <p className="hint">Raw size fields below use EU5 game units: 1 source unit equals 1,000 people.</p>
               <pre>{JSON.stringify(legacy.unresolved, null, 2)}</pre>
             </details>
           )}

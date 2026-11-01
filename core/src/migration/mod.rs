@@ -222,14 +222,14 @@ pub fn commit(plan: &Plan, old: &Project, nv: &Game) -> Result<Project> {
     Ok(new)
 }
 pub fn markdown(plan: &Plan) -> String {
-    let mut out=format!("# Migration plan\n\nOld fingerprint: `{}`\n\nNew fingerprint: `{}`\n\n| Location | Classification | OV total | NV total | Ratio | Resolution |\n|---|---|---:|---:|---|---|\n",plan.old_fingerprint,plan.new_fingerprint);
+    let mut out=format!("# Migration plan\n\nPopulation totals are people, converted exactly from EU5 source units (1 source unit = 1,000 people). Existing fractional-person values and migration precision are retained. Ratios are dimensionless.\n\nOld fingerprint: `{}`\n\nNew fingerprint: `{}`\n\n| Location | Classification | OV people | NV people | Ratio | Resolution |\n|---|---|---:|---:|---|---|\n",plan.old_fingerprint,plan.new_fingerprint);
     for i in &plan.items {
         out.push_str(&format!(
             "| {} | {} | {} | {} | {} | {} |\n",
             i.location,
             i.classification,
-            i.old_total,
-            i.new_total,
+            d::parse(&i.old_total).map(|value| d::people(&value)).unwrap_or_else(|_| "Invalid total".into()),
+            d::parse(&i.new_total).map(|value| d::people(&value)).unwrap_or_else(|_| "Invalid total".into()),
             i.ratio.as_deref().unwrap_or("undefined"),
             i.resolution.as_deref().unwrap_or(if i.proposal.is_some() {
                 "Proposed"
@@ -240,4 +240,23 @@ pub fn markdown(plan: &Plan) -> String {
     }
     out.push_str(&format!("\n## Location and ownership review\n\n```json\n{}\n```\n",serde_json::to_string_pretty(&serde_json::json!({"new":plan.new_locations,"removed":plan.removed_locations,"ownership":plan.ownership_changes,"tag_candidates":plan.tag_candidates,"confirmed_tag_mappings":plan.confirmed_tag_mappings})).unwrap()));
     out
+}
+
+/// Report-only enrichment. Live migration plans and their raw population rows
+/// retain the existing shape and exact thousand-person quantities.
+pub fn report_json(plan: &Plan) -> Result<serde_json::Value> {
+    let mut value = serde_json::to_value(plan)?;
+    value["units"] = serde_json::json!({
+        "raw_population":"thousands_of_people","population_people":"people","ratio":"dimensionless"
+    });
+    for (item, original) in value["items"].as_array_mut().unwrap().iter_mut().zip(&plan.items) {
+        item["old_total_people"] = serde_json::json!(d::people(&d::parse(&original.old_total)?));
+        item["new_total_people"] = serde_json::json!(d::people(&d::parse(&original.new_total)?));
+        item["old_vanilla_people"] = crate::export::people_rows(&original.old_vanilla)?;
+        item["old_modified_people"] = crate::export::people_rows(&original.old_modified)?;
+        item["new_vanilla_people"] = crate::export::people_rows(&original.new_vanilla)?;
+        item["proposal_people"] = original.proposal.as_ref()
+            .map(|rows| crate::export::people_rows(rows)).transpose()?.unwrap_or(serde_json::Value::Null);
+    }
+    Ok(value)
 }

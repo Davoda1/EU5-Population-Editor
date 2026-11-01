@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "eu5-population-core"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "base64",

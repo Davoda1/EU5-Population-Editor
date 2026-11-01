@@ -1,4 +1,4 @@
-# Building 1.0.2
+# Building 1.0.3
 
 Release builds use Node.js **26.13.0 LTS**, its bundled npm **11.20.0**, and Electron **45.2.1 stable**. The build-time Node.js version is separate from the Node.js runtime bundled inside Electron. Local scripts cache Node.js in a version-specific tooling directory.
 
@@ -13,6 +13,33 @@ Project-specific tooling, caches and intermediates belong in `toolings/`,
 Game reference files and saved user projects must stay outside the source tree.
 The source archive uses an explicit allowlist and excludes game files, caches,
 binaries and private saved work.
+
+## Bundled manual
+
+`docs/manual/site` is the frozen offline manual for this application version.
+Its matching editable source is in `docs/manual/source`. The normal UI build runs
+`node scripts/check-manual.mjs` to verify version, content hashes, links and search;
+it requires neither Python nor a manual download. Electron packages the generated
+pages under `resources/manual` on both platforms.
+
+To refresh the snapshot deliberately, use Python 3.12 or later with the included
+`Markdown==3.8.1` requirement, then run:
+
+```bash
+node scripts/bundle-manual.mjs /path/to/EU5-Population-Editor-Manual
+```
+
+The source must declare the same version as the application. You can also pass
+`docs/manual/source` to rebuild the included snapshot. Set `EU5_MANUAL_PYTHON`
+to select a particular interpreter. Generation and validation happen in a
+temporary copy before the verified snapshot replaces the existing one.
+The bundler normalizes text to LF and the repository preserves those line endings
+through checkout, so frozen hashes remain valid on Windows and Linux.
+
+The separate manual source builds the hosted edition with `python scripts/build.py`;
+`--offline` builds the application edition from the same chapter text and assets.
+
+## Toolchain preparation
 
 The scripts require an already installed compatible Rust/Cargo toolchain. They do
 not install Rust targets, change the default toolchain, edit home-directory Cargo
@@ -49,7 +76,7 @@ tests, production compilation, desktop tests when a display is available,
 packaging, packaged-sidecar protocol checks, Debian layout checks, source
 packaging and one SHA-256 manifest. A failed gate stops the pipeline.
 
-Pushing a semantic version tag such as `v1.0.2` starts the **Release** workflow.
+Pushing a semantic version tag such as `v1.0.3` starts the **Release** workflow.
 It checks the tag against `master` and the application version, runs the complete
 Windows and Linux build and test pipeline, and creates a draft release containing
 the verified packages and checksum manifest. Review the draft and its assets
@@ -123,6 +150,12 @@ application does not set it. Any such limitation must be recorded in the testing
 report. Distribution sandbox behavior should be checked as a normal desktop
 user. Renderer-only browser tests use a mocked bridge and require a separately
 prepared browser.
+
+`node scripts/capture-screenshots.mjs` captures the built application with the
+fictional fixture in `tests/helpers/demo-game.mjs`. It writes images only under
+`build/screenshots` and removes its generated game/profile data. Review the
+captures before copying them into the manual's canonical assets or the README
+illustrations; then refresh the manual snapshot explicitly.
 
 ## Optional local installation validation
 

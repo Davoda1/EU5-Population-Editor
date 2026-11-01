@@ -149,6 +149,28 @@ pub fn canonical(rows: &[Pop]) -> Result<BTreeMap<String, d::Q>> {
     }
     Ok(out)
 }
+/// Compare demographic meaning without losing an explicit whole-person repair.
+/// Aggregate totals alone cannot distinguish fractional source rows from their
+/// normalized allocation (for example, 0.0004 + 0.0006 from 0.001 + 0).
+/// Formatting, row order and harmless regrouping of whole people still compare
+/// equal, while existing fractional rows remain exact until deliberately edited.
+pub fn equivalent(left: &[Pop], right: &[Pop]) -> Result<bool> {
+    if canonical(left)? != canonical(right)? {
+        return Ok(false);
+    }
+    let fractional_rows = |rows: &[Pop]| -> Result<BTreeMap<(String, d::Q), usize>> {
+        let mut result = BTreeMap::new();
+        for row in rows {
+            let size = d::nonnegative(&row.size)?;
+            if !d::is_whole_people(&size) {
+                let key = format!("{}#{}", row.tuple(), row.unknown()?);
+                *result.entry((key, size)).or_insert(0) += 1;
+            }
+        }
+        Ok(result)
+    };
+    Ok(fractional_rows(left)? == fractional_rows(right)?)
+}
 pub fn total(rows: &[Pop]) -> Result<d::Q> {
     d::sum(rows.iter().map(|p| p.size.as_str()))
 }

@@ -198,9 +198,9 @@ test("typing, review, save, discard and Apply remain distinct", async ({
 }) => {
   await page.getByRole("button", { name: "Select EU5 game data" }).click();
   await page.getByRole("button", { name: /Alpha City/ }).click();
-  const row = page.locator("tbody tr").filter({ hasText: "7.001" }).first();
+  const row = page.locator("tbody tr").filter({ hasText: "7,001" }).first();
   await row.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel("Draft value").fill("12.345");
+  await page.getByLabel("Draft value").fill("12345");
   await expect(
     page.getByRole("button", { name: "Apply", exact: true }),
   ).toBeDisabled();
@@ -220,7 +220,7 @@ test("typing, review, save, discard and Apply remain distinct", async ({
     0,
   );
   await row.getByRole("button", { name: "Edit", exact: true }).click();
-  await page.getByLabel("Draft value").fill("9");
+  await page.getByLabel("Draft value").fill("9000");
   await page.getByRole("button", { name: "Review draft", exact: true }).click();
   await page.getByRole("button", { name: "Apply", exact: true }).click();
   await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -240,14 +240,14 @@ test("unreviewed typed Draft is retained across navigation", async ({
   await page.getByRole("button", { name: /Alpha City/ }).click();
   await page
     .locator("tbody tr")
-    .filter({ hasText: "7.001" })
+    .filter({ hasText: "7,001" })
     .first()
     .getByRole("button", { name: "Edit", exact: true })
     .click();
-  await page.getByLabel("Draft value").fill("42.001");
+  await page.getByLabel("Draft value").fill("42001");
   await page.getByRole("button", { name: /Beta City/ }).click();
   await page.getByRole("button", { name: /Alpha City/ }).click();
-  await expect(page.getByLabel("Draft value")).toHaveValue("42.001");
+  await expect(page.getByLabel("Draft value")).toHaveValue("42001");
 });
 
 

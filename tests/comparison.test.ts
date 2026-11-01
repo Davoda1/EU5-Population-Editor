@@ -69,6 +69,17 @@ describe("exact display arithmetic", () => {
   it("summarizes exact totals", () => {
     expect(summary(location.original, "culture")).toEqual({ amber: "8" });
   });
+  it("summarizes valid definition IDs that overlap JavaScript object properties", () => {
+    const row = location.original["peasants|amber|sun"];
+    const totals = summary({
+      one: { ...row, culture: "constructor", size: "0.001" },
+      two: { ...row, culture: "constructor", size: "0.002" },
+      three: { ...row, culture: "__proto__", size: "0.003" },
+    }, "culture");
+    expect(Object.keys(totals).sort()).toEqual(["__proto__", "constructor"]);
+    expect(totals.constructor).toBe("0.003");
+    expect(totals.__proto__).toBe("0.003");
+  });
 });
 describe("draft request validation", () => {
   const form = {
@@ -90,4 +101,9 @@ describe("draft request validation", () => {
     ));
   it("rejects malformed input instead of clamping", () =>
     expect(() => operation({ ...form, weights: "amber=-3" })).toThrow());
+  it("accepts valid group IDs that overlap JavaScript object properties", () => {
+    const weights = operation({ ...form, weights: "constructor=1\n__proto__=2" }).weights;
+    expect(JSON.stringify(weights)).toBe('{"constructor":"1","__proto__":"2"}');
+    expect(() => operation({ ...form, weights: "__proto__=1\n__proto__=2" })).toThrow("Duplicate");
+  });
 });

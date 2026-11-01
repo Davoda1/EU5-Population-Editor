@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-edition="offline">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Migrate after a game update · EU5 Population Editor</title>
+<meta name="description" content="When a game update changes the population source data, use Upgrade Project / Mod to review how your confirmed edits should carry forward. The editor does not.">
+<meta name="color-scheme" content="light dark">
+<meta name="eu5-manual-version" content="1.0.3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/manual.css?v=1.0.3">
+<script src="assets/theme.js?v=1.0.3"></script>
+<script src="assets/search-index.js?v=1.0.3" defer></script><script src="assets/manual.js?v=1.0.3" defer></script>
+</head>
+<body data-page="migration" data-version="1.0.3" data-edition="offline">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+ <div class="header-inner">
+  <a class="brand" href="index.html" aria-label="EU5 Population Editor manual home"><img src="assets/favicon.svg" width="30" height="30" alt=""><span>EU5 Population Editor</span></a>
+  <span class="header-divider" aria-hidden="true"></span><span class="site-label">Manual</span>
+  <nav class="header-links" aria-label="Project"><a href="https://github.com/Davoda1/EU5-Population-Editor/releases" aria-label="Download EU5 Population Editor 1.0.3">Downloads <span aria-hidden="true">↗</span></a><a href="https://github.com/Davoda1/EU5-Population-Editor">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <button class="icon-button mobile-search search-trigger" aria-label="Search manual"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+
+ </div>
+</header>
+<div class="manual-layout">
+ <aside class="sidebar" aria-label="Manual navigation">
+  <button class="search-trigger search-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>Search manual</span><kbd>/</kbd></button>
+  <nav aria-label="Chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html" aria-current="page">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav>
+  <div class="sidebar-meta"><span class="version-label">Version 1.0.3</span><span>Bundled offline manual</span><span>Windows &amp; Linux</span></div>
+ </aside>
+ <div class="mobile-navigation"><details><summary>Browse manual <span>Upgrade a project</span></summary><nav aria-label="Mobile chapters"><p class="nav-heading">Getting started</p><ul><li><a href="index.html">Introduction</a></li><li><a href="installation.html">Installation</a></li><li><a href="first-project.html">Your first project</a></li></ul><p class="nav-heading">Editing population</p><ul><li><a href="navigation.html">Browse the world</a></li><li><a href="editing.html">Draft and Apply</a></li><li><a href="ratios.html">Ratios and totals</a></li><li><a href="projects.html">Save and reopen</a></li><li><a href="export.html">Export a mod</a></li></ul><p class="nav-heading">Updating game data</p><ul><li><a href="migration.html" aria-current="page">Upgrade a project</a></li><li><a href="import.html">Import an existing mod</a></li></ul><p class="nav-heading">Reference</p><ul><li><a href="validation.html">Validation and reports</a></li><li><a href="settings.html">Settings and shortcuts</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li><li><a href="privacy.html">Privacy and licensing</a></li><li><a href="release-notes.html">Release notes</a></li></ul></nav></details></div>
+ <main id="main" tabindex="-1">
+  <div class="breadcrumb"><a href="index.html">Manual</a><span aria-hidden="true">/</span><span>Updating game data</span></div>
+  <article><header class="article-header"><p class="edition">EU5 Population Editor 1.0.3</p><h1>Migrate after a game update</h1></header><p class="lead">When a game update changes the population source data, use Upgrade Project / Mod to review how your confirmed edits should carry forward. The editor does not silently replace incompatible data.</p>
+<h2 id="prepare">Prepare</h2>
+<p>Save a backup of the project and resolve any pending drafts. Open the project, choose <strong>Upgrade Project / Mod</strong>, and select the new vanilla game installation. Planning compares the recorded old baseline with your modifications and the new source; it does not change Working until you commit.</p>
+<p>Pending work includes a typed editing form that has not yet been reviewed, as well as a reviewed Draft. Apply or discard it before starting migration. A form from the old data is not carried into the new source generation.</p>
+<p>A saved project can be opened for migration when its source fingerprint differs from the installed game, because it contains the old baseline. Normal editing and export remain blocked until the source difference is resolved. A remembered selection is cleared if the location is no longer editable.</p>
+<h2 id="understand-the-three-versions">Understand the three versions</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Old vanilla (OV)</td>
+<td>The saved baseline for the modified location</td>
+</tr>
+<tr>
+<td>Old modified (M)</td>
+<td>Your confirmed Working changes</td>
+</tr>
+<tr>
+<td>New vanilla (NV)</td>
+<td>The newly loaded game data</td>
+</tr>
+</tbody>
+</table></div>
+<p>Read the rows, totals, additional fields and proposed result for each item. Row reordering alone does not create a conflict.</p>
+<h2 id="classifications">Classifications</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Classification</th>
+<th>Proposed behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Safe — unchanged vanilla</td>
+<td>Carry your confirmed changes forward unchanged</td>
+</tr>
+<tr>
+<td>Safe — scaled to new vanilla</td>
+<td>Scale the modified total by the new/old vanilla total ratio when the identity and other compatibility checks allow it</td>
+</tr>
+<tr>
+<td>Conflict — manual review required</td>
+<td>Require an explicit resolution for changed identities, unknown fields or incompatible source semantics</td>
+</tr>
+<tr>
+<td>Conflict — removed location</td>
+<td>Acknowledge removal; the editor does not recreate the missing location</td>
+</tr>
+<tr>
+<td>Conflict — restricted location</td>
+<td>Explicitly choose <strong>Keep new vanilla</strong> when the new game classifies the location as sea, lake, corridor or impassable land</td>
+</tr>
+</tbody>
+</table></div>
+<p>Scaling uses the whole-location total ratio when compatible identity sets match. It does not assume every new vanilla group changed by the same percentage.</p>
+<h2 id="resolve-conflicts">Resolve conflicts</h2>
+<p>The available resolutions include keeping new vanilla, applying the old modification, and applying the scaled old modification where valid. Inspect the proposed rows after resolving. Removed locations require their own explicit acknowledgment.</p>
+<p>For a restricted location, <strong>Keep new vanilla</strong> is the only resolution. Old or scaled population edits cannot be applied to water, corridors or impassable land. The migration report retains the old edits for review; they are not silently discarded while planning.</p>
+<p>Directly applying old ratios onto new vanilla and opening a conflict in a temporary normal editing workspace are not available in 1.0.3. You can keep new vanilla, commit the reviewed plan and then edit the location normally if it remains ordinary land eligible for population editing.</p>
+<h2 id="review-world-changes">Review world changes</h2>
+<p>Inspect added and removed locations, ownership changes and possible replacement country tags. New locations retain new vanilla data. Tag candidates are suggestions; even one candidate requires an explicit choice. No replacement is silently inferred.</p>
+<p>Acknowledge that you reviewed the topology and tag changes before committing. A tag mapping updates remembered country selection; population migration remains keyed by location.</p>
+<h2 id="commit-and-save">Commit and save</h2>
+<p>Export the migration report as JSON or Markdown if you want a record before committing. <strong>Commit migration</strong> remains unavailable until required resolutions and review acknowledgments are complete.</p>
+<p>Committing switches the project to the new source and clears undo history at that source boundary. Save the resulting project separately after commit. Closing the migration dialog without committing leaves the old Working project active.</p></article>
+  <nav class="page-navigation" aria-label="Adjacent chapters"><a class="previous" href="export.html"><span>Previous</span><strong>Export a mod </strong></a><a class="next" href="import.html"><span>Next</span><strong>Import an existing mod →</strong></a></nav>
+   <footer class="article-footer"><span>EU5 Population Editor documentation · © 2026 davoda1</span><a href="https://davoda1.github.io/EU5-Population-Editor-Manual/">Latest online manual <span aria-hidden="true">↗</span></a><a href="LICENSE.txt">AGPLv3</a></footer>
+ </main>
+ <aside class="page-outline" aria-label="On this page"><div><p>On this page</p><ul><li><a href="#prepare">Prepare</a></li><li><a href="#understand-the-three-versions">Understand the three versions</a></li><li><a href="#classifications">Classifications</a></li><li><a href="#resolve-conflicts">Resolve conflicts</a></li><li><a href="#review-world-changes">Review world changes</a></li><li><a href="#commit-and-save">Commit and save</a></li></ul><a class="help-link" href="troubleshooting.html">Need help?</a><a class="outline-source" href="https://github.com/Davoda1/EU5-Population-Editor/issues">Report an issue ↗</a></div></aside>
+</div>
+<dialog id="search-dialog" aria-labelledby="search-title">
+ <div class="search-heading"><h2 id="search-title">Search the manual</h2><button class="dialog-close" aria-label="Close search">Esc</button></div>
+ <div class="search-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search-input" type="search" placeholder="Search topics, settings, shortcuts…" autocomplete="off" aria-label="Search manual pages" aria-controls="search-results"></div>
+ <p id="search-status" aria-live="polite">Type a topic to find a page.</p><ul id="search-results"></ul>
+ <div class="search-footer">Search runs in your browser. No queries are sent.</div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+</body></html>

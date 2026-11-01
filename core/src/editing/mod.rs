@@ -36,6 +36,12 @@ pub enum Operation {
 }
 fn target(old: &d::Q, mode: &str, value: &str) -> Result<d::Q> {
     let v = d::parse(value)?;
+    if matches!(mode, "set" | "add") {
+        ensure!(
+            d::is_whole_people(&v),
+            "Population inputs must be whole people (increments of 0.001 EU5 source units)"
+        );
+    }
     let q = match mode {
         "set" => v,
         "add" => old + v,
@@ -47,6 +53,12 @@ fn target(old: &d::Q, mode: &str, value: &str) -> Result<d::Q> {
         q >= d::parse("0")?,
         "Result would be negative; draft unchanged"
     );
+    if mode == "add" {
+        ensure!(
+            d::is_whole_people(&q),
+            "The existing population contains a fractional person. Use Set exact value to choose a whole-person target before adding or subtracting; draft unchanged"
+        );
+    }
     Ok(q)
 }
 pub fn scale(rows: &[Pop], total: &d::Q, precision: usize) -> Result<Vec<Pop>> {
@@ -66,7 +78,9 @@ pub fn scale(rows: &[Pop], total: &d::Q, precision: usize) -> Result<Vec<Pop>> {
 }
 pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<Pop>> {
     let mut out = rows.to_vec();
-    let precision = p::precision(rows);
+    // Only directly requested edits use the whole-person grid. Generic scaling
+    // retains its caller-selected precision for existing-project migration.
+    let precision = d::PEOPLE_PRECISION;
     match op {
         Operation::Exact { tuple, mode, value } => {
             let indices: Vec<_> = rows
@@ -79,7 +93,6 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
             let chosen: Vec<_> = indices.iter().map(|i| rows[*i].clone()).collect();
             let old = p::total(&chosen)?;
             let new = target(&old, mode, value)?;
-            let prec = precision.max(d::precision(value));
             let weights = if old.is_zero() {
                 vec![d::parse("1")?; indices.len()]
             } else {
@@ -88,7 +101,7 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
                     .map(|p| d::nonnegative(&p.size))
                     .collect::<Result<_>>()?
             };
-            let sizes = d::allocate(&new, &weights, prec)?;
+            let sizes = d::allocate(&new, &weights, precision)?;
             for (i, s) in indices.into_iter().zip(sizes) {
                 out[i].size = s;
             }
@@ -103,15 +116,19 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
             religion,
             size,
         } => {
+            let value = d::nonnegative(size)?;
+            ensure!(
+                d::is_whole_people(&value),
+                "Population inputs must be whole people (increments of 0.001 EU5 source units)"
+            );
             let p = Pop {
                 kind: pop_type.clone(),
                 culture: culture.clone(),
                 religion: religion.clone(),
-                size: size.clone(),
+                size: d::format(&value, precision),
                 template: String::new(),
             };
             defs.validate(&p)?;
-            d::nonnegative(size)?;
             ensure!(
                 !out.iter().any(|x| x.tuple() == p.tuple()),
                 "Combination exists; use its exact row editor"
@@ -120,7 +137,7 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
         }
         Operation::Scale { mode, value } => {
             let total = target(&p::total(rows)?, mode, value)?;
-            out = scale(rows, &total, precision.max(d::precision(value)))?;
+            out = scale(rows, &total, precision)?;
         }
         Operation::Rebalance {
             axis,
@@ -140,7 +157,12 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
                 .values()
                 .map(|s| d::nonnegative(s))
                 .collect::<Result<Vec<_>>>()?;
-            let totals = d::allocate(&p::total(rows)?, &ws, precision)?;
+            let old_total = p::total(rows)?;
+            ensure!(
+                d::is_whole_people(&old_total),
+                "The location total contains a fractional person. Use Scale population total → Set exact value to choose a whole-person total before rebalancing; draft unchanged"
+            );
+            let totals = d::allocate(&old_total, &ws, precision)?;
             out.clear();
             if *advanced {
                 // Allocate every complementary bucket independently: its exact total is invariant.
@@ -152,7 +174,12 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
                     buckets.entry(key).or_default().push(row.clone());
                 }
                 for bucket in buckets.values() {
-                    let allocations = d::allocate(&p::total(bucket)?, &ws, precision)?;
+                    let bucket_total = p::total(bucket)?;
+                    ensure!(
+                        d::is_whole_people(&bucket_total),
+                        "A complementary demographic bucket contains a fractional person. Use Scale population total → Set exact value to normalize this location to whole people before Advanced preservation; draft unchanged"
+                    );
+                    let allocations = d::allocate(&bucket_total, &ws, precision)?;
                     for (group, size) in groups.iter().zip(allocations) {
                         let mut row = bucket[0].clone();
                         row.set_field(axis, group);
@@ -177,7 +204,23 @@ pub fn preview(rows: &[Pop], op: &Operation, defs: &Definitions) -> Result<Vec<P
                     for row in &mut profile {
                         row.set_field(axis, group);
                     }
-                    out.extend(scale(&profile, &d::nonnegative(&total)?, precision)?);
+                    let total = d::nonnegative(&total)?;
+                    if p::total(&profile)?.is_zero() && !total.is_zero() {
+                        // The retained rows have no relative weights after a group
+                        // reaches zero. Restore it evenly without replacing its
+                        // demographic identities or unknown-field templates.
+                        let sizes = d::allocate(
+                            &total,
+                            &vec![d::parse("1")?; profile.len()],
+                            precision,
+                        )?;
+                        for (row, size) in profile.iter_mut().zip(sizes) {
+                            row.size = size;
+                        }
+                        out.extend(profile);
+                    } else {
+                        out.extend(scale(&profile, &total, precision)?);
+                    }
                 }
             }
             ensure!(

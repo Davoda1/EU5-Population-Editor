@@ -88,13 +88,17 @@ try {
   const edit = async (value) => {
     await page
       .locator("tbody tr")
-      .filter({ hasText: "7.001" })
+      .filter({ hasText: "7,001" })
       .first()
       .getByRole("button", { name: "Edit", exact: true })
       .click();
     await page.getByLabel("Draft value").fill(value);
   };
-  await edit("999");
+  await edit("999000");
+  await dialog(game);
+  await request("upgrade_plan");
+  await expect(request("upgrade_commit")).rejects.toThrow(/Apply or discard/);
+  await expect(page.getByLabel("Draft value")).toHaveValue("999000");
   expect((await request("location", { key: "alpha" })).working_total).toBe(
     "10",
   );
@@ -117,7 +121,7 @@ try {
   expect((await request("location", { key: "alpha" })).working_total).toBe(
     "10",
   );
-  await edit("8.001");
+  await edit("8001");
   await page.getByRole("button", { name: "Review draft", exact: true }).click();
   await page.screenshot({ path: "build/desktop-draft.png" });
   await page.getByRole("button", { name: "Apply", exact: true }).click();
@@ -140,7 +144,7 @@ try {
   await page.getByLabel("New type").fill("clergy");
   await page.getByLabel("New culture").fill("copper");
   await page.getByLabel("New religion").fill("moon");
-  await page.getByLabel("Size", { exact: true }).fill("1.25");
+  await page.getByLabel("Size (people)", { exact: true }).fill("1250");
   await page.getByRole("button", { name: "Review draft", exact: true }).click();
   await page.getByRole("button", { name: "Apply", exact: true }).click();
   expect((await request("location", { key: "alpha" })).working_total).toBe(
@@ -163,7 +167,7 @@ try {
     .filter({ hasText: "copper" })
     .getByRole("button", { name: "Edit", exact: true })
     .click();
-  await page.getByLabel("Draft value").fill("999");
+  await page.getByLabel("Draft value").fill("999000");
   await page.getByRole("button", { name: "Review draft", exact: true }).click();
   await page.getByRole("button", { name: "Export Mod", exact: true }).click();
   await page.getByLabel("Mod name", { exact: true }).fill("Desktop Test");

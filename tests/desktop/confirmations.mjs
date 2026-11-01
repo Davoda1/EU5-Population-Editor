@@ -41,7 +41,7 @@ try {
   await picker(game);
   await page.getByRole("button", { name: "Select EU5 game data" }).click();
   await page.getByRole("button", { name: /Alpha City/ }).click();
-  await review("9.001");
+  await review("9001");
   await closeWindow();
   await expect(confirmation()).toBeVisible();
   await expect(confirmation().getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
@@ -74,7 +74,7 @@ try {
   await expect(confirmation()).toHaveCount(0);
   await expect.poll(async () => (await request("status")).drafts).toBe(0);
   await page.getByRole("button", { name: /Alpha City/ }).click();
-  await review("9.001", true);
+  await review("9001", true);
   await picker(project, true);
   await page.getByRole("button", { name: "New Project", exact: true }).click();
   await confirmation().getByRole("button", { name: "Save Working and continue" }).click();
@@ -85,7 +85,7 @@ try {
   await picker(project);
   await page.getByRole("button", { name: "Open", exact: true }).click();
   await page.getByRole("button", { name: /Alpha City/ }).click();
-  await review("10.001", true);
+  await review("10001", true);
   await closeWindow();
   await expect(confirmation()).toBeVisible();
   const closed = app.waitForEvent("close");

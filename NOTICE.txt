@@ -1,4 +1,4 @@
-EU5 Population Editor 1.0.2
+EU5 Population Editor 1.0.3
 Copyright © 2026 davoda1.
 
 Original project code and documentation: GNU Affero General Public License,

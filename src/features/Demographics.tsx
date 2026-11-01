@@ -1,12 +1,15 @@
 import { useState } from "react";
 import type { Location } from "../types/api";
 import { comparison, summary, percent } from "../state/comparison";
+import { formatPeople, hasFractionalPeople } from "../state/population-units";
 export function Demographics({
   location,
   onEdit,
+  editDisabled = false,
 }: {
   location: Location;
   onEdit: (tuple: string) => void;
+  editDisabled?: boolean;
 }) {
   const [search, setSearch] = useState(""),
     [changed, setChanged] = useState(false),
@@ -14,6 +17,10 @@ export function Demographics({
     [religion, setReligion] = useState(""),
     [type, setType] = useState("");
   const rows = comparison(location);
+  const fractionalSource = location.original_fractional_people ||
+    location.working_fractional_people || location.draft_fractional_people ||
+    [...Object.values(location.original), ...Object.values(location.working),
+      ...Object.values(location.draft || {})].some((row) => hasFractionalPeople(row.size));
   const shown = rows.filter(
     (r) =>
       (!changed || r.delta !== "0") &&
@@ -26,8 +33,15 @@ export function Demographics({
     <>
       <div className="section-head">
         <h2>Demographics</h2>
-        <span>{rows.length} combinations · EU5 size units</span>
+        <span>{rows.length} combinations · People</span>
       </div>
+      {fractionalSource && (
+        <p className="hint">
+          Some source rows contain fractional people. Exact values are shown
+          without rounding; untouched data is preserved. Separate rows may
+          contain fractions even when their combined count is whole.
+        </p>
+      )}
       <div className="filters">
         <input
           aria-label="Search demographic rows"
@@ -83,13 +97,13 @@ export function Demographics({
                 <td>{r.row.type}</td>
                 <td>{r.row.culture}</td>
                 <td>{r.row.religion}</td>
-                <td className="num">{r.original}</td>
-                <td className="num">{r.working}</td>
-                <td className="num draft-value">{r.draft ?? "—"}</td>
-                <td className="num">{r.delta}</td>
+                <td className="num">{formatPeople(r.original)}</td>
+                <td className="num">{formatPeople(r.working)}</td>
+                <td className="num draft-value">{r.draft === null ? "—" : formatPeople(r.draft)}</td>
+                <td className="num">{formatPeople(r.delta)}</td>
                 <td>
                   <button
-                    disabled={!location.working[r.key]}
+                    disabled={editDisabled || !location.working[r.key]}
                     onClick={() => onEdit(r.key)}
                   >
                     Edit
@@ -134,14 +148,14 @@ export function Demographics({
                     .map((k) => (
                       <tr key={k}>
                         <td>{k}</td>
-                        <td>{o[k] || "0"}</td>
+                        <td>{formatPeople(o[k] || "0")}</td>
                         <td>
-                          {w[k] || "0"}{" "}
+                          {formatPeople(w[k] || "0")}{" "}
                           <small>
                             {percent(w[k] || "0", location.working_total)}
                           </small>
                         </td>
-                        <td>{location.draft ? d[k] || "0" : "—"}</td>
+                        <td>{location.draft ? formatPeople(d[k] || "0") : "—"}</td>
                       </tr>
                     ))}
                 </tbody>

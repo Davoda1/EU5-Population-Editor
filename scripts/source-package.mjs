@@ -64,7 +64,7 @@ for (const dir of dirs) await walk(dir);
 for (const file of files) {
   if (
     /\.(?:7z|rgb|dat|crate|exe|deb|eu5popproj)$/i.test(file) ||
-    (/\.png$/i.test(file) && !file.replaceAll("\\", "/").startsWith("docs/extras/") && !file.replaceAll("\\", "/").startsWith("assets/icons/")) ||
+    (/\.png$/i.test(file) && !file.replaceAll("\\", "/").startsWith("docs/extras/") && !file.replaceAll("\\", "/").startsWith("assets/icons/") && !/^docs\/manual\/(?:source|site)\/assets\/[A-Za-z0-9-]+\.png$/.test(file.replaceAll("\\", "/")) && file.replaceAll("\\", "/") !== "docs/manual/source/docs/extras/banner.png") ||
     /(?:06_pops|10_countries|locations\.png)/i.test(file)
   )
     throw new Error(`Forbidden source artifact: ${file}`);
