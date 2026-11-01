@@ -90,7 +90,10 @@ compatibility test for 1.0.3.
 - The build-only legacy glob adapter passed six tests covering its callback,
   synchronous and matching interfaces, actual rimraf/temp cleanup, Windows path
   separators, error propagation and cancellation. Production package inspection
-  confirms that the adapter and test/build tooling are excluded.
+  confirms that the adapter and test/build tooling are excluded. A subsequent
+  Windows run exposed a test expectation using POSIX output for a native path;
+  the assertion now uses the platform's separator and checks explicitly requested
+  POSIX output separately for both synchronous and asynchronous traversal.
 - Linux packaging now assigns safe ownership and permissions explicitly.
   Verification rejects group/other-writable entries and unexpected privileged
   modes; only the root-owned Debian sandbox helper may use setuid. Both generated

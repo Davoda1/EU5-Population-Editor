@@ -75,8 +75,13 @@ it("preserves brace magic and Windows separator handling for rimraf patterns", a
   expect(glob.hasMagic("C:\\Temp\\EU5 tests\\literal.txt", { platform: "win32" })).toBe(false);
   expect(glob.hasMagic("\\\\server\\share\\*.tmp", { platform: "win32" })).toBe(true);
   const options = { cwd: root, windowsPathsNoEscape: true };
-  expect(glob.sync("nested\\*.tmp", options)).toEqual(["nested/c.tmp"]);
-  expect(await collect("nested\\*.tmp", options)).toEqual(["nested/c.tmp"]);
+  // glob returns native separators unless POSIX output is explicitly requested.
+  const nativeMatch = [join("nested", "c.tmp")];
+  expect(glob.sync("nested\\*.tmp", options)).toEqual(nativeMatch);
+  expect(await collect("nested\\*.tmp", options)).toEqual(nativeMatch);
+  const posixOptions = { ...options, posix: true };
+  expect(glob.sync("nested\\*.tmp", posixOptions)).toEqual(["nested/c.tmp"]);
+  expect(await collect("nested\\*.tmp", posixOptions)).toEqual(["nested/c.tmp"]);
 });
 
 it("runs actual legacy rimraf sync and callback cleanup without changing unmatched files", async () => {
