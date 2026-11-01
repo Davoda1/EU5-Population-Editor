@@ -198,7 +198,10 @@ try {
   const copy = manual.getByRole("button", { name: "Copy code to clipboard" }).first();
   await copy.click();
   await expect(copy).toHaveText("Copied");
-  expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(example);
+  // Windows' native clipboard represents line endings as CRLF, while DOM text
+  // uses LF. Normalize that transport difference without trimming code content.
+  const copiedCode = await app.evaluate(({ clipboard }) => clipboard.readText());
+  expect(copiedCode.replace(/\r\n/g, "\n")).toBe(example);
   expect(await manual.evaluate(async () => {
     try { await navigator.clipboard.readText(); return false; }
     catch { return true; }

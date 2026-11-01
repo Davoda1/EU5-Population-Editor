@@ -2,7 +2,7 @@
 import { createWriteStream } from "node:fs";
 import { readdir, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import archiver from "archiver";
+import { TarArchive } from "archiver";
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error("Invalid release version");
 const dirs = [
@@ -73,7 +73,7 @@ await mkdir("release", { recursive: true });
 const output = createWriteStream(
   `release/EU5-Population-Editor-${version}-Source.tar.gz`,
 );
-const archive = archiver("tar", { gzip: true, gzipOptions: { level: 9 } });
+const archive = new TarArchive({ gzip: true, gzipOptions: { level: 9 } });
 const completion = new Promise((resolve, reject) => {
   output.on("close", resolve);
   archive.on("error", reject);

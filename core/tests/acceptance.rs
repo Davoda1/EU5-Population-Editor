@@ -328,11 +328,20 @@ fn export_reparse_unknowns_unrelated_bytes_zip_metadata_reports_and_read_only() 
     for report in ["changes.csv", "changes.md", "changes.json"] {
         assert!(dest.join("synthetic-mod").join(report).is_file());
     }
-    let archive =
+    let mut archive =
         zip::ZipArchive::new(std::fs::File::open(dest.join("synthetic-mod.zip")).unwrap()).unwrap();
     assert!(archive
         .file_names()
-        .all(|n| n.starts_with("synthetic-mod/")));
+        .all(|n| n.is_ok_and(|name| name.starts_with("synthetic-mod/"))));
+    // Verify the upgraded ZIP writer's compressed payloads against the export
+    // directory, including metadata, reports and source-preserving game data.
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).unwrap();
+        let name = entry.name().unwrap().into_owned();
+        let mut bytes = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut bytes).unwrap();
+        assert_eq!(bytes, std::fs::read(dest.join(name)).unwrap());
+    }
     assert_eq!(
         before,
         std::fs::read(root.path().join("main_menu/setup/start/06_pops.txt")).unwrap()

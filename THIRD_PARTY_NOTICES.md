@@ -9,7 +9,7 @@ The license above applies to original project code, not to third-party component
 |---|---|---|
 | React / React DOM | 19.1.1 | MIT |
 | Electron | 45.2.1 | MIT; embedded Chromium components have their own notices |
-| anyhow | 1.0.100 | MIT OR Apache-2.0 |
+| anyhow | 1.0.104 | MIT OR Apache-2.0 |
 | serde | 1.0.228 | MIT OR Apache-2.0 |
 | serde_json | 1.0.145 | MIT OR Apache-2.0 |
 | sha2 | 0.10.9 | MIT OR Apache-2.0 |
@@ -20,9 +20,9 @@ The license above applies to original project code, not to third-party component
 | image | 0.25.6 | MIT OR Apache-2.0 |
 | base64 | 0.22.1 | MIT OR Apache-2.0 |
 | tempfile | 3.23.0 | MIT OR Apache-2.0 |
-| zip | 2.4.2 | MIT |
+| zip | 9.2.0 | MIT |
 
-Verbatim notices for all 71 external crates in Cargo.lock are retained under
+Verbatim notices for all 76 external crates in Cargo.lock are retained under
 `third-party/rust/`, including target-specific and build dependencies. The
 resolved graph and license expressions are listed in
 `third-party/RUST-LICENSE-INVENTORY.md`. For alternative license expressions,

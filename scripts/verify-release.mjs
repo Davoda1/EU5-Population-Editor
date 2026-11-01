@@ -17,6 +17,16 @@ async function rejectHiddenEntries(base) {
     if (entry.isDirectory()) await rejectHiddenEntries(join(base, entry.name));
   }
 }
+function verifyArchivePermissions(listing, debian = false) {
+  for (const line of listing.split("\n").filter(Boolean)) {
+    const mode = line.slice(0, 10);
+    const owner = line.slice(10).trimStart().split(/\s+/)[0];
+    const sandbox = debian && line.endsWith(" ./usr/lib/eu5-population-editor/chrome-sandbox");
+    const expected = sandbox ? ["-rwsr-xr-x"] : ["drwxr-xr-x", "-rw-r--r--", "-rwxr-xr-x"];
+    if (!expected.includes(mode) || !["root/root", "0/0"].includes(owner))
+      throw new Error(`Unsafe archive ownership or permissions: ${line}`);
+  }
+}
 const platform = process.argv[2];
 if (!["linux", "windows"].includes(platform)) throw new Error("Usage: node scripts/verify-release.mjs linux|windows [--structure-only]");
 const structureOnly = process.argv.includes("--structure-only");
@@ -54,6 +64,7 @@ if (platform === "linux") {
   const metadata = run("dpkg-deb", ["-f", deb]);
   if (!metadata.includes("Architecture: amd64") || !metadata.includes(`Version: ${version}`)) throw new Error("Debian metadata mismatch");
   const contents = run("dpkg-deb", ["-c", deb]);
+  verifyArchivePermissions(contents, true);
   if (!contents.split("\n").some(l => l.includes("chrome-sandbox") && l.startsWith("-rwsr-xr-x") && l.includes("root/root"))) throw new Error("Debian sandbox ownership/mode mismatch");
   const temp = await mkdtemp(join(tmpdir(), "eu5-package-verification-"));
   try {
@@ -79,6 +90,7 @@ if (platform === "linux") {
     if (!(await readFile(packagedCore)).equals(await readFile(sidecar))) throw new Error("Debian and portable sidecars differ");
   } finally { await rm(temp, { recursive: true, force: true }); }
   const tarContents = run("tar", ["-tzf", `release/EU5-Population-Editor-${version}-Linux-x86_64.tar.gz`]).trim().split("\n");
+  verifyArchivePermissions(run("tar", ["--numeric-owner", "-tvzf", `release/EU5-Population-Editor-${version}-Linux-x86_64.tar.gz`]));
   if (!tarContents.includes("eu5-population-editor") || !tarContents.includes("resources/app.asar")) throw new Error("Portable archive must have the real executable and resources at top level");
   if (tarContents.some(p => p.split("/").some(part => part.startsWith(".")))) throw new Error("Portable archive contains a hidden/transient file");
   if (tarContents.some(p => /\.(?:sh|bat|cmd|ps1)$/i.test(p))) throw new Error("Portable archive contains a launcher script");

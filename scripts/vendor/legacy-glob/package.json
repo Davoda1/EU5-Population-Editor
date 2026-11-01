@@ -1,0 +1,11 @@
+{
+  "name": "eu5-legacy-glob-adapter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Callback compatibility for the build-only Squirrel temp/rimraf dependency",
+  "license": "AGPL-3.0-only",
+  "main": "index.cjs",
+  "dependencies": {
+    "secure-glob": "npm:glob@14.0.3"
+  }
+}

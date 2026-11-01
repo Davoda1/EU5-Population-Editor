@@ -10,7 +10,7 @@ results separately for each source commit.
 | Check | Observed result |
 | --- | --- |
 | Rust tests, locked dependencies, Rust 1.99.1 | 71 passed; 1 installation-dependent test intentionally ignored |
-| Frontend/controller tests | 87 passed across 13 test files |
+| Frontend/controller and build-tool regression tests | 98 passed across 15 test files |
 | Browser workflows | All 7 passed, including minimum-size layouts and Draft separation |
 | Production renderer/main/preload build | TypeScript, Vite and Electron compilation passed using Node 26.13.0 and npm 11.20.0 |
 | Native Linux application | Editing, saving, export, migration, confirmations and settings workflows passed with Electron 45.2.1 and the real Rust sidecar |
@@ -52,9 +52,9 @@ and blocks migration while an unreviewed form is present. It also verifies that
 legacy fractional values survive project save/load, unaffected export and
 migration, including fractions hidden inside duplicate demographic rows.
 
-The browser-only suite used the existing `EU5_QA_CHROMIUM` override with the
-previously prepared official Chrome for Testing 156.0.8078.80. Locked dependencies
-and pinned toolchains were reused without changing project or CI pins. Desktop
+The browser-only suite used the `EU5_QA_CHROMIUM` override with official Chrome for
+Testing 156.0.8078.80. The updated dependency graph passed a clean `npm ci`, and
+the Node.js, npm, Electron and release Rust toolchain versions remain unchanged. Desktop
 checks used an isolated virtual display and the test-only `EU5_QA_NO_SANDBOX=1` setting;
 they do not establish operating-system sandbox behavior on an ordinary desktop.
 
@@ -62,6 +62,43 @@ Native Windows execution and an in-game EU5 test were not included in this local
 verification run. The installation-dependent Rust test was therefore not run.
 The existing 1.4.5 compatibility baseline below does not represent a new in-game
 compatibility test for 1.0.3.
+
+### Security and Windows follow-up
+
+- The Windows CI failure was an exact clipboard comparison: native Windows
+  returned CRLF while the manual's DOM text used LF. The test now normalizes only
+  CRLF, retaining the full code text and trailing newline. The preceding Windows
+  compilation, browser checks and other desktop suites had passed. Native Windows
+  execution of the follow-up changes remains a CI check.
+- All 28 reported GitHub dependency alerts were addressed with updated locked
+  dependencies. The broader audit also identified and fixed a glob advisory and
+  RustSec RUSTSEC-2026-0190 in anyhow. `npm audit --json`, including development
+  dependencies, reported zero vulnerabilities after the clean installation.
+- Every package in `core/Cargo.lock` was compared with the official RustSec
+  advisory database at commit `2295466c4e9df26647fd67d8fa1c705ac2fc7f81`;
+  no applicable advisory remained. This was a direct advisory comparison, not
+  a `cargo-audit` run. The pinned manual build dependency Markdown 3.8.1 also
+  returned no matching OSV or PyPI advisory.
+- ZIP 9.2.0 and anyhow 1.0.104 passed all Rust tests and a release build. ZIP
+  regression coverage decompresses every exported entry and compares its bytes
+  with the export directory. Windows-GNU compilation including tests passed;
+  this does not replace native Windows execution.
+- Five sidecar regressions cover bounded response buffering, split UTF-8 data,
+  rejection of cyclic/BigInt and oversized inputs without orphaned timers, and
+  isolation from stopped processes. The complete native Linux desktop workflows
+  also passed against the rebuilt sidecar client.
+- The build-only legacy glob adapter passed six tests covering its callback,
+  synchronous and matching interfaces, actual rimraf/temp cleanup, Windows path
+  separators, error propagation and cancellation. Production package inspection
+  confirms that the adapter and test/build tooling are excluded.
+- Linux packaging now assigns safe ownership and permissions explicitly.
+  Verification rejects group/other-writable entries and unexpected privileged
+  modes; only the root-owned Debian sandbox helper may use setuid. Both generated
+  Linux archive formats passed these checks. The guard also rejected earlier
+  local archives with permissive runtime modes and deliberately unsafe fixtures.
+
+These advisory results describe the checked dependency versions and databases on
+2026-11-01; they do not establish the absence of undiscovered vulnerabilities.
 
 ## Automated coverage
 

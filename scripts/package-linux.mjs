@@ -40,6 +40,22 @@ async function collect(base, relative = "") {
   }
   return files;
 }
+// Incoming runtime files may have been unpacked or copied with permissive
+// modes. Normalize the private staging trees instead of trusting host metadata.
+async function normalizePermissions(base) {
+  await chmod(base, 0o755);
+  for (const entry of await readdir(base, { withFileTypes: true })) {
+    const path = join(base, entry.name);
+    if (entry.isDirectory()) await normalizePermissions(path);
+    else if (entry.isFile()) {
+      const magic = Buffer.alloc(4);
+      const handle = await open(path, "r");
+      try { await handle.read(magic, 0, 4, 0); } finally { await handle.close(); }
+      const executable = magic.equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]));
+      await chmod(path, executable ? 0o755 : 0o644);
+    } else throw new Error(`Unsupported package entry: ${path}`);
+  }
+}
 const inputFiles = await collect(unpacked);
 // Package from a private temporary tree so live workspace synchronization cannot
 // introduce partial-copy files after input selection.
@@ -57,7 +73,6 @@ await cp(portable, runtime, { recursive: true });
 await mkdir(join(stage, "usr/bin"), { recursive: true });
 run(process.env.CC || "cc", ["-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-fPIE", "-pie", "-Wl,-z,relro,-z,now", "-s", "scripts/linux-entry.c", "-o", join(stage, "usr/bin/eu5-population-editor")]);
 await chmod(join(stage, "usr/bin/eu5-population-editor"), 0o755);
-await chmod(join(runtime, "chrome-sandbox"), 0o4755);
 
 // Derive the actual minimum glibc version from linked symbol requirements.
 // An inaccurate lower bound would allow apt to install an unusable build.
@@ -90,13 +105,17 @@ await mkdir(scalableDir, { recursive: true });
 await copyFile("assets/icon.svg", join(scalableDir, "eu5-population-editor.svg"));
 await writeFile(join(portable, "RUNNING.txt"), `EU5 Population & Demographics Editor ${version}\n\nExtract this entire archive into an empty directory. Run ./eu5-population-editor as an ordinary desktop user. The executable is at the archive root; keep the accompanying files and resources together. No Python, Node or Rust installation is needed.\n\nRequires x86-64 GNU/Linux with glibc ${glibc} or newer (not musl), GTK 3, NSS, ALSA, GBM, X11/XCB, libdrm, libxkbcommon and standard C++ runtime libraries. Distribution package names vary.\n\nElectron requires usable unprivileged user namespaces or its root-owned setuid sandbox. If your distribution disables user namespaces, install the extracted directory in a root-owned location that ordinary users cannot modify, then have the administrator set chrome-sandbox ownership to root:root and permissions to 4755. The enclosing filesystem must permit setuid executables. Run the editor as your ordinary user afterwards. Never disable the sandbox.\n\nPreferences and map caches are stored in the normal per-user configuration directory. Game installations are read-only; save projects and export mods to separate locations.\n`);
 await copyFile(join(portable, "RUNNING.txt"), join(runtime, "RUNNING.txt"));
+await normalizePermissions(portable);
+await normalizePermissions(stage);
+// Only the installed, root-owned sandbox helper needs elevated mode bits.
+await chmod(join(runtime, "chrome-sandbox"), 0o4755);
 await mkdir("release", { recursive: true });
 run("dpkg-deb", ["--root-owner-group", "-Zxz", "-z6", "--build", stage, `release/eu5-population-editor_${version}_amd64.deb`]);
 const entries = await collect(portable);
 const fileList = join(temporary, "package-files.txt");
 await writeFile(fileList, entries.join("\0") + "\0");
 // No enclosing directory: the actual Electron executable is at archive root.
-run("tar", ["-czf", `release/EU5-Population-Editor-${version}-Linux-x86_64.tar.gz`, "-C", portable, "--null", "--verbatim-files-from", "--no-recursion", "-T", fileList]);
+run("tar", ["-czf", `release/EU5-Population-Editor-${version}-Linux-x86_64.tar.gz`, "--owner=0", "--group=0", "--numeric-owner", "-C", portable, "--null", "--verbatim-files-from", "--no-recursion", "-T", fileList]);
 console.log(`Linux packages created; minimum glibc ${glibc}. Debian /usr/bin contains one native executable, with no launcher scripts or links.`);
 
 } finally { await rm(temporary, { recursive: true, force: true }); }

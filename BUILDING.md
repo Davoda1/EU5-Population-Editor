@@ -6,6 +6,13 @@ Release builds use Node.js **26.13.0 LTS**, its bundled npm **11.20.0**, and Ele
 Release builds use both lockfiles. See `TESTING-REPORT.md` for automated coverage,
 checks and runtime limitations.
 
+Security overrides select patched ASAR, universal-package and matcher dependencies
+for the build tools. The local `scripts/vendor/legacy-glob` adapter connects the
+older Squirrel `temp`/`rimraf` callback API to maintained glob 14 without retaining
+the vulnerable matcher dependency. Its regression tests cover the actual cleanup
+chain, including Windows path handling. The adapter is build-only and is excluded
+from the packaged application's production dependencies.
+
 ## Build directories and prerequisites
 
 Project-specific tooling, caches and intermediates belong in `toolings/`,
@@ -41,7 +48,8 @@ The separate manual source builds the hosted edition with `python scripts/build.
 
 ## Toolchain preparation
 
-The scripts require an already installed compatible Rust/Cargo toolchain. They do
+The scripts require an already installed Rust/Cargo toolchain, version 1.88 or
+newer; release CI uses Rust 1.99.1. They do
 not install Rust targets, change the default toolchain, edit home-directory Cargo
 configuration, or change persistent environment settings. npm, Cargo and Electron
 caches are configured for the build process. Pinned Node 26.13.0 is downloaded to the

@@ -21,7 +21,7 @@ function Test-Eu5Rust {
  if (!$IsWindows -or [Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'X64') { throw 'Windows 10/11 x86-64 is required by these scripts.' }
  foreach ($Tool in @('rustc','cargo')) { if (!(Get-Command $Tool -ErrorAction SilentlyContinue)) { throw "$Tool is missing. Install/expose a suitable existing MSVC Rust toolchain, then rerun. No automatic Rust installation or configuration changes are permitted." } }
  $RustVersion = (& rustc --version).Split(' ')[1]
- if ([version]$RustVersion -lt [version]'1.85.0') { throw "Rust 1.85 or newer is required; found $RustVersion. No toolchain changes made." }
+ if ([version]$RustVersion -lt [version]'1.88.0') { throw "Rust 1.88 or newer is required; found $RustVersion. No toolchain changes made." }
  Invoke-Eu5Tool -File rustc -Arguments @('--version'); Invoke-Eu5Tool -File cargo -Arguments @('--version')
  if (Get-Command rustup -ErrorAction SilentlyContinue) { Invoke-Eu5Tool -File rustup -Arguments @('--version') }
  $VerboseRust = & rustc -vV

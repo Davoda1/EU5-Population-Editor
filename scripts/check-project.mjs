@@ -27,7 +27,7 @@ async function inspect(dir) {
     assert.ok(!entry.isSymbolicLink(), `Unexpected source symlink: ${path}`);
     if (entry.isDirectory()) { await inspect(path); continue; }
     assert.ok(!/\.(?:eu5popproj|7z|rgb|dat|exe|deb)$/i.test(path), `Unexpected source artifact: ${path}`);
-    if (!/\.(?:md|txt|json|rs|ts|tsx|js|mjs|yml|yaml|toml|sh|ps1|html|css)$/i.test(path)) continue;
+    if (!/\.(?:md|txt|json|rs|ts|tsx|js|mjs|cjs|yml|yaml|toml|sh|ps1|html|css)$/i.test(path)) continue;
     const text = await readFile(path, "utf8");
     assert.ok(!credential.test(text), `Credential found in ${path}`);
     assert.ok(!personalEmail.test(text), `Personal contact address found in ${path}`);

@@ -27,14 +27,14 @@ if [[ -x "$EU5_ROOT/toolings/node-v26.13.0/bin/node" ]]; then export PATH="$EU5_
 cd -- "$EU5_ROOT"
 eu5_die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 eu5_rust_check() {
-  command -v rustc >/dev/null || eu5_die 'rustc is not installed or not in this process PATH. Install a suitable Rust toolchain yourself (minimum 1.85), then rerun. This script will not install or modify Rust.'
+  command -v rustc >/dev/null || eu5_die 'rustc is not installed or not in this process PATH. Install a suitable Rust toolchain yourself (minimum 1.88), then rerun. This script will not install or modify Rust.'
   command -v cargo >/dev/null || eu5_die 'cargo is not available; expose the already installed Cargo for this process.'
   rustc --version
   cargo --version
   if command -v rustup >/dev/null; then rustup --version; fi
   local version major minor
   version="$(rustc --version)"; version="${version#rustc }"; version="${version%% *}"; major="${version%%.*}"; minor="${version#*.}"; minor="${minor%%.*}"
-  [[ "$major" -gt 1 || ( "$major" -eq 1 && "$minor" -ge 85 ) ]] || eu5_die 'Rust >=1.85 required. No toolchain changes were made.'
+  [[ "$major" -gt 1 || ( "$major" -eq 1 && "$minor" -ge 88 ) ]] || eu5_die 'Rust >=1.88 required. No toolchain changes were made.'
   [[ "$(uname -m)" == x86_64 ]] || eu5_die 'This release targets GNU/Linux x86-64 only.'
 }
 eu5_node_prepare() {

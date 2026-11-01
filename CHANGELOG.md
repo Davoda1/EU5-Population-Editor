@@ -16,6 +16,10 @@
 - Preserve the selected country when restoring a saved location and support valid identifiers that match JavaScript object property names.
 - Support the bundled manual's Copy code buttons without allowing clipboard reads, and preserve manual snapshot hashes across Windows and Linux checkouts.
 - Clarify the distinct Add Population Group and Rebalance ratios workflows in the manual.
+- Update vulnerable Rust and JavaScript dependencies, including ZIP generation and build/test tooling, and refresh their retained license notices.
+- Bound sidecar responses before buffering complete lines, reject invalid requests without orphaned timers, and ignore stale process responses after a restart.
+- Normalize Linux package ownership and permissions, and reject writable runtime files or unexpected privileged entries during release verification.
+- Account for native Windows clipboard line endings when checking copied manual examples.
 - Retain project format 1, Node.js 26.13.0, npm 11.20.0 and Electron 45.2.1.
 
 ## 1.0.2
